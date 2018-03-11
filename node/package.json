@@ -1,0 +1,28 @@
+{
+  "author": "Ersun Warncke <ersun.warncke@protonmail.com>",
+  "dependencies": {
+    "express": "^4.16.2",
+    "fs-extra": "^5.0.0",
+    "get-env": "^0.5.10",
+    "if-defined": "^1.0.17",
+    "multer": "^1.3.0",
+    "mz": "^2.7.0"
+  },
+  "description": "c:ph server",
+  "devDependencies": {
+    "chai": "4.1.2",
+    "chai-as-promised": "7.1.1",
+    "chai-subset": "1.6.0",
+    "mocha": "4.1.0",
+    "sinon": "4.1.5"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "engines": {
+    "node": ">=7.6.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  }
+}
