@@ -8,33 +8,93 @@ const path = require('path')
 /* npm modules */
 const crypto = require('mz/crypto')
 const fs = require('fs-extra')
+const touch = require('touch')
+
+/* initialize process.env */
+require('../lib/config')
+
+/* app modules */
+const RedisService = require('../lib/redis-service')
 
 /* globals */
 const hexChars = [0,1,2,3,4,5,6,7,8,9,'a','b','c','d','e','f']
 
-initData().catch(console.error)
+// table of files that need to be created
+const createdFiles = {  l: {}, m: {}, s: {} }
+
+// table of file sizes in bytes
+const bytesBySize = {
+    l: 4 * 1024 * 1024,
+    m: 1024 * 1024,
+    s: 256 * 1024,
+}
+
+initData().catch(console.error).then(async () => {
+    await RedisService.quit()
+})
 
 async function initData () {
-    const dataRoot = path.resolve(process.cwd(), process.argv[2])
+    // flush server database before init
+    await RedisService.flushServers()
     // create root dir
-    await fs.ensureDir(dataRoot)
+    await fs.ensureDir(process.env.DATA_ROOT)
+    // create file that will be used for all times
+    const initFile = path.resolve(process.env.DATA_ROOT, 'init.time')
+    await fs.writeFile(initFile, Date.now())
     // create 256 dirs for each possible 2 char hex prefix
     for (let a of hexChars) {
         for (let b of hexChars) {
-            const dataDir = `${a}${b}`
-            // create directories and random files for each size
-            createRandomFile(path.resolve(dataDir, 's'), 256*1024)
-            createRandomFile(path.resolve(dataDir, 'm'), 1024*1024)
-            createRandomFile(path.resolve(dataDir, 'l'), 4*1024*1024)
+            const prefix = `${a}${b}`
+            const dataDir = path.resolve(process.env.DATA_ROOT, prefix)
+            // make entries for files that need to be created
+            createdFiles.l[prefix] = false
+            createdFiles.m[prefix] = false
+            createdFiles.s[prefix] = false
+        }
+    }
+    // create random files for each size
+    for (const size of Object.keys(createdFiles)) {
+        let created = 0
+
+        while (created < 256) {
+            if (await createRandomFile(size, initFile)) {
+                created++
+                console.log(`created ${created} ${size}`)
+            }
         }
     }
 }
 
-async function createRandomFile (dataDir, size) {
-    await fs.ensureDir(dataDir)                
-    const data = await crypto.randomBytes(size)
+async function createRandomFile (size, initFile) {
+    // number of bytes for file size
+    const bytes = bytesBySize[size]
+    // get random data
+    const data = await crypto.randomBytes(bytes)
+    // hash data to get file name
     const hash = crypto.createHash('sha256')
     hash.update(data)
-    const fileName = `${hash.digest('hex').substr(0,32)}.ciph`
-    await fs.writeFile(path.resolve(dataDir, fileName), data)
+    // id is first 128 bits of hash
+    const id = hash.digest('hex').substr(0,32)
+    // get first two bytes for directory prefix
+    const prefix = id.substr(0, 2)
+    // if prefix already has file created then try again
+    if (createdFiles[size][prefix]) {
+        return false
+    }
+    // get path for file
+    const dataDir = path.resolve(process.env.DATA_ROOT, prefix, size)
+    // create directory if it does not exist
+    await fs.ensureDir(dataDir)
+    // create data file
+    const fileName = path.resolve(dataDir, `${id}.ciph`)
+    // save file
+    await fs.writeFile(fileName, data)
+    // set same times for all files
+    await touch(fileName, {ref: initFile})
+    // add block to meta db
+    await RedisService.setServers(size, id, [process.env.SERVER_ID])
+
+    createdFiles[size][prefix] = true
+
+    return true;
 }

@@ -1,24 +1,22 @@
 'use strict'
 
-/* native modules */
-const path = require('path')
-
 /* npm modules */
-const defined = require('if-defined')
 const express = require('express')
 
-/* application modules */
+/* initialize process.env */
+require('./lib/config')
+
+/* app modules */
+const RedisService = require('./lib/redis-service')
+const ServerService = require('./lib/server-service')
 const errorWrapper = require('./lib/error-wrapper')
+
+/* route handlers */
 const getBlock = require('./app/get-block')
 const getRandom = require('./app/get-random')
 const postPublishFinish = require('./app/publish/post-finish')
 const postPublishStart = require('./app/publish/post-start')
 const postUpload = require('./app/post-upload')
-
-/* env config */
-if (!defined(process.env.HOST)) process.env.HOST = 'dev.ciph.io'
-if (!defined(process.env.PORT)) process.env.PORT = '9999'
-if (!defined(process.env.ROOT)) process.env.ROOT = path.resolve(__dirname, '../data')
 
 /* express configuration */
 
@@ -27,16 +25,6 @@ const app = express()
 app.disable('x-powered-by')
 app.enable('strict routing')
 app.enable('case sensitive routing')
-
-/* express routes */
-
-app.get('/block', errorWrapper(getBlock))
-app.get('/random', errorWrapper(getRandom))
-app.post('/publish/finish', errorWrapper(postPublishFinish))
-app.post('/publish/start', errorWrapper(postPublishStart))
-app.post('/upload', errorWrapper(postUpload))
-
-/* start server */
 
 app.on('error', (err) => {
     // only deal with listen errors
@@ -58,6 +46,47 @@ app.on('error', (err) => {
     throw new Error(`listen on port ${process.env.PORT} failed: ${msg}`)
 })
 
-app.listen(process.env.PORT, () => {
-    console.log(`server listening on ${process.env.PORT}`)
+/* express routes */
+
+app.get('/block', errorWrapper(getBlock))
+app.get('/random', errorWrapper(getRandom))
+app.post('/publish/finish', errorWrapper(postPublishFinish))
+app.post('/publish/start', errorWrapper(postPublishStart))
+app.post('/upload', errorWrapper(postUpload))
+
+/* error handler */
+
+app.use((error, req, res, next) => {
+    // error must be object with stack
+    if (typeof error !== 'object' || typeof error.stack !== 'string') {
+        error = new Error(error)
+    }
+    // get http code from error code
+    let code = error.code
+    // if code is not between 300 and 500 then set to 500
+    if (!(code >= 300 && code <= 500)) {
+        code = error.code = 500
+    }
+    // set http status code
+    res.status(code)
+    // set error
+    res.json({
+        code: code,
+        error: error.message,
+        stack: process.env.PROD ? undefined : error.stack.split('\n'),
+    })
 })
+
+/* start server */
+
+startServer().catch(err => {
+    console.error(err)
+    process.exit()
+})
+
+async function startServer () {
+    // start listening for requests
+    app.listen(process.env.PORT, () => {
+        console.log(`server listening on ${process.env.PORT}`)
+    })
+}
