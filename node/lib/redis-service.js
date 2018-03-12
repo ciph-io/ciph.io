@@ -14,7 +14,7 @@ const sServerClientArgs = {
 }
 
 if (defined(process.env.REDIS_S_SERVER_PASS)) {
-    serverClientArgs.password = process.env.REDIS_S_SERVER_PASS
+    sServerClientArgs.password = process.env.REDIS_S_SERVER_PASS
 }
 
 const sServerClient = new IORedis(sServerClientArgs)
@@ -28,7 +28,7 @@ const mServerClientArgs = {
 }
 
 if (defined(process.env.REDIS_M_SERVER_PASS)) {
-    serverClientArgs.password = process.env.REDIS_M_SERVER_PASS
+    mServerClientArgs.password = process.env.REDIS_M_SERVER_PASS
 }
 
 const mServerClient = new IORedis(mServerClientArgs)
@@ -42,11 +42,39 @@ const lServerClientArgs = {
 }
 
 if (defined(process.env.REDIS_L_SERVER_PASS)) {
-    serverClientArgs.password = process.env.REDIS_L_SERVER_PASS
+    lServerClientArgs.password = process.env.REDIS_L_SERVER_PASS
 }
 
 const lServerClient = new IORedis(lServerClientArgs)
 lServerClient.on('error', console.error);
+
+/* client for storing replace(d) block ids */
+const replaceClientArgs = {
+    db: process.env.REDIS_REPLACE_DB,
+    host: process.env.REDIS_REPLACE_HOST,
+    port: process.env.REDIS_REPLACE_PORT,
+}
+
+if (defined(process.env.REDIS_REPLACE_PASS)) {
+    replaceClientArgs.password = process.env.REDIS_REPLACE_PASS
+}
+
+const replaceClient = new IORedis(replaceClientArgs)
+replaceClient.on('error', console.error);
+
+/* client for storing replace tokens */
+const replaceTokenClientArgs = {
+    db: process.env.REDIS_REPLACE_TOKEN_DB,
+    host: process.env.REDIS_REPLACE_TOKEN_HOST,
+    port: process.env.REDIS_REPLACE_TOKEN_PORT,
+}
+
+if (defined(process.env.REDIS_REPLACE_TOKEN_PASS)) {
+    replaceTokenClientArgs.password = process.env.REDIS_REPLACE_TOKEN_PASS
+}
+
+const replaceTokenClient = new IORedis(replaceTokenClientArgs)
+replaceTokenClient.on('error', console.error);
 
 module.exports = class RedisService {
 
@@ -57,7 +85,6 @@ module.exports = class RedisService {
             sServerClient.flushdb(),
         ])
     }
-
 
     /**
      * @function getBlock
@@ -79,6 +106,44 @@ module.exports = class RedisService {
     }
 
     /**
+     * @function getBlocks
+     *
+     * get list of server ids for blocks.
+     *
+     * @param {string} size (s|m|l)
+     * @param {array} ids
+     *
+     * @returns {Promise<object>}
+     */
+    static async getBlocks (size, ids) {
+        // create new pipeline to execute batch of commands
+        const pipeline = RedisService.serverClient(size).pipeline()
+        // get each id
+        for (const id of ids) {
+            pipeline.get(id)
+        }
+        // execute all gets
+        const results = await pipeline.exec()
+        // decode results
+        for (let i=0; i<results.length; i++) {
+            // result is array with [err, val]
+            if (!results[i][0] && results[i][1]) {
+                results[i] = {
+                    id: ids[i],
+                    servers: results[i][1].split(','),
+                    size: size,
+                }
+            }
+            // result has error or not found
+            else {
+                results[i] = null
+            }
+        }
+
+        return results
+    }
+
+    /**
      * @function getRandomBlock
      *
      * get id and servers for random block of given size.
@@ -92,6 +157,14 @@ module.exports = class RedisService {
         assert(id, 'getRandomBlock failed')
 
         return RedisService.getBlock(size, id)
+    }
+
+    static replaceClient () {
+        return replaceClient
+    }
+
+    static replaceTokenClient () {
+        return replaceTokenClient
     }
 
     /**

@@ -14,8 +14,11 @@ const errorWrapper = require('./lib/error-wrapper')
 /* route handlers */
 const getBlock = require('./app/get-block')
 const getRandom = require('./app/get-random')
-const postPublishFinish = require('./app/publish/post-finish')
-const postPublishStart = require('./app/publish/post-start')
+const getReplace = require('./app/get-replace')
+const getReplaceToken = require('./app/get-replace-token')
+const postPublishFinish = require('./app/post-publish-finish')
+const postPublishStart = require('./app/post-publish-start')
+const postReplace = require('./app/post-replace')
 const postUpload = require('./app/post-upload')
 
 /* express configuration */
@@ -25,6 +28,7 @@ const app = express()
 app.disable('x-powered-by')
 app.enable('strict routing')
 app.enable('case sensitive routing')
+app.use(express.json())
 
 app.on('error', (err) => {
     // only deal with listen errors
@@ -50,8 +54,11 @@ app.on('error', (err) => {
 
 app.get('/block', errorWrapper(getBlock))
 app.get('/random', errorWrapper(getRandom))
+app.get('/replace', errorWrapper(getReplace))
+app.get('/replace/token', errorWrapper(getReplaceToken))
 app.post('/publish/finish', errorWrapper(postPublishFinish))
 app.post('/publish/start', errorWrapper(postPublishStart))
+app.post('/replace', errorWrapper(postReplace))
 app.post('/upload', errorWrapper(postUpload))
 
 /* error handler */
@@ -73,7 +80,7 @@ app.use((error, req, res, next) => {
     res.json({
         code: code,
         error: error.message,
-        stack: process.env.PROD ? undefined : error.stack.split('\n'),
+        stack: process.env.PROD === 'true' ? undefined : error.stack.split('\n'),
     })
 })
 
