@@ -1,16 +1,11 @@
 'use strict'
 
 /* app modules */
-const RedisService = require('../lib/redis-service')
-const ServerService = require('../lib/server-service')
+const BlockService = require('../lib/block-service')
 
 /* exports */
 module.exports = getBlock
 
 async function getBlock (req, res) {
-    const block = await RedisService.getBlock(req.query.size, req.query.id)
-
-    res.json({
-        urls: ServerService.getUrlsForBlock(block)
-    })
+    res.json( await BlockService.getBlock(req.query.size, req.query.id) )
 }

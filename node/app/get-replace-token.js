@@ -7,7 +7,5 @@ const ReplaceService = require('../lib/replace-service')
 module.exports = getReplaceToken
 
 async function getReplaceToken (req, res) {
-    const replaceToken = await ReplaceService.createReplaceToken()
-
-    res.json(replaceToken)
+    res.json( await ReplaceService.createReplaceToken() )
 }

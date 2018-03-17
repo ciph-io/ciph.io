@@ -3,17 +3,74 @@
 /* native modules */
 const fs = require('fs')
 
+/* npm modules */
+const crypto = require('mz/crypto')
+const defined = require('if-defined')
+const randomInt = require('random-int')
+
 /* app modules */
+const RedisService = require('./redis-service')
 const assert = require('./assert')
 
-/* load server config file */
+// load server config file
 const servers = JSON.parse( fs.readFileSync(process.env.SERVER_CONF_FILE, 'utf8') )
+// convert secrets to buffers
+for (const server of servers) {
+    server.secretBuffer = Buffer.from(server.secret, 'hex')
+}
 
 /* exports */
 module.exports = class ServerService {
 
+    /**
+     * @function getUploadServer
+     *
+     * get server to upload to
+     *
+     * @param {integer} size
+     * @param {string} blockId
+     *
+     * @returns {Promise<object>}
+     */
+    static getUploadServer (size, blockId) {
+        // get random server - could also be partitioned on block id
+        return servers[ randomInt(0, servers.length-1) ]
+    }
 
-    /** @function getServerById
+    /**
+     * @function getBlockUrlForServer
+     *
+     * get block download user for server
+     *
+     * @param {string} size
+     * @param {string} blockId
+     * @param {string} serverId
+     *
+     * @returns {string}
+     */
+    static getBlockUrlForServer (size, blockId, serverId) {
+        // default to current server
+        if (!defined(serverId)) {
+            serverId = process.env.SERVER_ID
+        }
+        const server = ServerService.getServerById(serverId)
+
+        return `${server.url}/download/${blockId.substr(0, 2)}/${size}/${blockId}.ciph`
+    }
+
+    /**
+     * @function getServer
+     *
+     * get current server based on env SERVER_ID
+     *
+     *  @returns {object}
+     */
+    static getServer () {
+        return getServerById(process.env.SERVER_ID)
+    }
+
+    /**
+     * @function getServerById
      *
      * get server root url from hex id
      *
@@ -42,15 +99,32 @@ module.exports = class ServerService {
      * @return {array}
      */
     static getUrlsForBlock (block) {
-        const urls = []
+        return block.servers.map(serverId =>
+            ServerService.getBlockUrlForServer(block.size, block.id, serverId))
+    }
 
-        for (const serverId of block.servers) {
-            const server = ServerService.getServerById(serverId)
-
-            urls.push(`${server.url}/download/${block.id.substr(0,2)}/${block.size}/${block.id}.ciph`)
+    /**
+     * @function getServerSignature
+     *
+     * sign input with server secret
+     *
+     * @param {buffer|string} data
+     * @param {integer|string} serverId
+     *
+     * @return {string}
+     */
+    static getServerSignature (data, serverId) {
+        // default to this server
+        if (!defined(serverId)) {
+            serverId = process.env.SERVER_ID
         }
-
-        return urls
+        const server = ServerService.getServerById(serverId)
+        // create hmac to sign data
+        const hmac = crypto.createHmac('sha256', server.secretBuffer);
+        // sign data
+        hmac.update(data)
+        // create signature
+        return hmac.digest('hex')
     }
 
 }

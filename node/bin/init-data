@@ -20,14 +20,20 @@ const RedisService = require('../lib/redis-service')
 const hexChars = [0,1,2,3,4,5,6,7,8,9,'a','b','c','d','e','f']
 
 // table of files that need to be created
-const createdFiles = {  l: {}, m: {}, s: {} }
+const createdFiles = [
+    {},
+    {},
+    {},
+    {},
+]
 
 // table of file sizes in bytes
-const bytesBySize = {
-    l: 4 * 1024 * 1024,
-    m: 1024 * 1024,
-    s: 256 * 1024,
-}
+const bytesBySize = [
+    256 * 1024,         // 256KB
+    1024 * 1024,        // 1MB
+    4 * 1024 * 1024,    // 4MB
+    16 * 1024 * 1024,   // 16MB
+]
 
 initData().catch(console.error).then(async () => {
     await RedisService.quit()
@@ -35,7 +41,7 @@ initData().catch(console.error).then(async () => {
 
 async function initData () {
     // flush server database before init
-    await RedisService.flushServers()
+    await RedisService.flushAll()
     // create root dir
     await fs.ensureDir(process.env.DATA_ROOT)
     // create file that will be used for all times
@@ -46,14 +52,19 @@ async function initData () {
         for (let b of hexChars) {
             const prefix = `${a}${b}`
             const dataDir = path.resolve(process.env.DATA_ROOT, prefix)
+            // create directories for each size
+            for (const size in createdFiles) {
+                await fs.ensureDir(path.resolve(dataDir, size))
+            }
             // make entries for files that need to be created
-            createdFiles.l[prefix] = false
-            createdFiles.m[prefix] = false
-            createdFiles.s[prefix] = false
+            createdFiles[0][prefix] = false
+            createdFiles[1][prefix] = false
+            createdFiles[2][prefix] = false
+            createdFiles[3][prefix] = false
         }
     }
     // create random files for each size
-    for (const size of Object.keys(createdFiles)) {
+    for (let size in createdFiles) {
         let created = 0
 
         while (created < 256) {

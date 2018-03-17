@@ -1,103 +1,53 @@
 'use strict'
 
 /* npm modules */
+const ChangeCase = require('change-case')
 const IORedis = require('ioredis')
 
 /* app modules */
 const assert = require('./assert')
 
-/* client for mapping (s)mall blocks to servers */
-const sServerClientArgs = {
-    db: process.env.REDIS_S_SERVER_DB,
-    host: process.env.REDIS_S_SERVER_HOST,
-    port: process.env.REDIS_S_SERVER_PORT,
-}
+/* globals */
 
-if (defined(process.env.REDIS_S_SERVER_PASS)) {
-    sServerClientArgs.password = process.env.REDIS_S_SERVER_PASS
-}
+// redis client indexed by name
+const clientsByName = {}
+// redis clients for block dbs indexed by block size
+const blockServerClients = []
+// server id is int/hex
+const serverIdRegExp = /^[0-9a-f]+$/
 
-const sServerClient = new IORedis(sServerClientArgs)
-sServerClient.on('error', console.error);
+class RedisService {
 
-/* client for mapping (m)edium blocks to servers */
-const mServerClientArgs = {
-    db: process.env.REDIS_M_SERVER_DB,
-    host: process.env.REDIS_M_SERVER_HOST,
-    port: process.env.REDIS_M_SERVER_PORT,
-}
+    /* block servers methods */
 
-if (defined(process.env.REDIS_M_SERVER_PASS)) {
-    mServerClientArgs.password = process.env.REDIS_M_SERVER_PASS
-}
-
-const mServerClient = new IORedis(mServerClientArgs)
-mServerClient.on('error', console.error);
-
-/* client for mapping (l)arge blocks to servers */
-const lServerClientArgs = {
-    db: process.env.REDIS_L_SERVER_DB,
-    host: process.env.REDIS_L_SERVER_HOST,
-    port: process.env.REDIS_L_SERVER_PORT,
-}
-
-if (defined(process.env.REDIS_L_SERVER_PASS)) {
-    lServerClientArgs.password = process.env.REDIS_L_SERVER_PASS
-}
-
-const lServerClient = new IORedis(lServerClientArgs)
-lServerClient.on('error', console.error);
-
-/* client for storing replace(d) block ids */
-const replaceClientArgs = {
-    db: process.env.REDIS_REPLACE_DB,
-    host: process.env.REDIS_REPLACE_HOST,
-    port: process.env.REDIS_REPLACE_PORT,
-}
-
-if (defined(process.env.REDIS_REPLACE_PASS)) {
-    replaceClientArgs.password = process.env.REDIS_REPLACE_PASS
-}
-
-const replaceClient = new IORedis(replaceClientArgs)
-replaceClient.on('error', console.error);
-
-/* client for storing replace tokens */
-const replaceTokenClientArgs = {
-    db: process.env.REDIS_REPLACE_TOKEN_DB,
-    host: process.env.REDIS_REPLACE_TOKEN_HOST,
-    port: process.env.REDIS_REPLACE_TOKEN_PORT,
-}
-
-if (defined(process.env.REDIS_REPLACE_TOKEN_PASS)) {
-    replaceTokenClientArgs.password = process.env.REDIS_REPLACE_TOKEN_PASS
-}
-
-const replaceTokenClient = new IORedis(replaceTokenClientArgs)
-replaceTokenClient.on('error', console.error);
-
-module.exports = class RedisService {
-
-    static async flushServers () {
-        return Promise.all([
-            lServerClient.flushdb(),
-            mServerClient.flushdb(),
-            sServerClient.flushdb(),
-        ])
+    /**
+     * @function createNewBlock
+     *
+     * set block id key if it does not exist with value indicating
+     * that it is being uploaded. throw error if key exists.
+     *
+     * @param {integer} size
+     * @param {string} id
+     *
+     * @returns {Promise<undefined>}
+     */
+    static async createNewBlock (size, id, time) {
+        const res = await RedisService.getBlockServerClient(size).setnx(id, `U,${time}`)
+        assert(res === 1, 'blockId exists')
     }
 
     /**
-     * @function getBlock
+     * @function getBlockServers
      *
      * get list of server ids for block.
      *
-     * @param {string} size (s|m|l)
+     * @param {integer} size
      * @param {string} id
      *
      * @returns {Promise<object>}
      */
-    static async getBlock (size, id) {
-        const serversStr = await RedisService.serverClient(size).get(id)
+    static async getBlockServers (size, id) {
+        const serversStr = await RedisService.getBlockServerClient(size).get(id)
         assert(serversStr, 'getBlock failed')
 
         const servers = serversStr.split(',')
@@ -106,18 +56,18 @@ module.exports = class RedisService {
     }
 
     /**
-     * @function getBlocks
+     * @function getBlockServersMulti
      *
      * get list of server ids for blocks.
      *
-     * @param {string} size (s|m|l)
+     * @param {integer} size
      * @param {array} ids
      *
      * @returns {Promise<object>}
      */
-    static async getBlocks (size, ids) {
+    static async getBlockServersMulti (size, ids) {
         // create new pipeline to execute batch of commands
-        const pipeline = RedisService.serverClient(size).pipeline()
+        const pipeline = RedisService.getBlockServerClient(size).pipeline()
         // get each id
         for (const id of ids) {
             pipeline.get(id)
@@ -128,10 +78,18 @@ module.exports = class RedisService {
         for (let i=0; i<results.length; i++) {
             // result is array with [err, val]
             if (!results[i][0] && results[i][1]) {
-                results[i] = {
-                    id: ids[i],
-                    servers: results[i][1].split(','),
-                    size: size,
+                // servers are comma separated ids
+                const servers = results[i][1].split(',')
+                // only keep valid server ids
+                if (servers[0].match(serverIdRegExp)) {
+                    results[i] = {
+                        id: ids[i],
+                        servers: servers,
+                        size: size,
+                    }
+                }
+                else {
+                    results[i] = null
                 }
             }
             // result has error or not found
@@ -144,61 +102,29 @@ module.exports = class RedisService {
     }
 
     /**
-     * @function getRandomBlock
+     * @function getRandomBlockServers
      *
      * get id and servers for random block of given size.
      *
-     * @param {string} size (s|m|l)
+     * @param {integer} size
      *
      * @returns {Promise<object>}
      */
-    static async getRandomBlock (size) {
-        const id = await RedisService.serverClient(size).randomkey()
-        assert(id, 'getRandomBlock failed')
-
-        return RedisService.getBlock(size, id)
-    }
-
-    static replaceClient () {
-        return replaceClient
-    }
-
-    static replaceTokenClient () {
-        return replaceTokenClient
-    }
-
-    /**
-     * @function serverClient
-     *
-     * get redis client that corresponds to block size.
-     *
-     * @param {string} size (s|m|l)
-     *
-     * @returns {Redis}
-     */
-    static serverClient (size) {
-        switch (size) {
-            case 'l':
-                return lServerClient
-            case 'm':
-                return mServerClient
-            case 's':
-                return sServerClient
-            default:
-                throw new Error('invalid size')
-        }
-    }
-
-    static lServerClient () {
-        return lServerClient
-    }
-
-    static mServerClient () {
-        return mServerClient
-    }
-
-    static sServerClient () {
-        return sServerClient
+    static async getRandomBlockServers (size) {
+        // create new pipeline to get multiple random blocks
+        const pipeline = RedisService.getBlockServerClient(size).pipeline()
+        // get 5 random block ids
+        pipeline.randomkey()
+        pipeline.randomkey()
+        pipeline.randomkey()
+        pipeline.randomkey()
+        pipeline.randomkey()
+        // execute queued commands
+        const results = await pipeline.exec()
+        // extract ids from results
+        const ids = results.map(result => result[1])
+        // get blocks for ids
+        return RedisService.getBlockServersMulti(size, ids)
     }
 
     /**
@@ -206,22 +132,84 @@ module.exports = class RedisService {
      *
      * set list of server ids for block id.
      *
-     * @param {string} size (s|m|l)
+     * @param {integer} size
      * @param {string} id
      * @param {array}  servers
      *
      * @returns {Promise<undefined>}
      */
     static async setServers (size, id, servers) {
-        return RedisService.serverClient(size).set(id, servers.join(','))
+        return RedisService.getBlockServerClient(size).set(id, servers.join(','))
+    }
+
+    /* redis client management methods */
+
+    static async flushAll () {
+        return Promise.all(Object.keys(clientsByName).map(clientName => {
+            return RedisService.getClient(clientName).flushdb()
+        }))
+    }
+
+    static getClient (name) {
+        assert(defined(clientsByName[name]), 'invalid client name')
+        return clientsByName[name]
+    }
+
+    static getBlockServerClient (size) {
+        assert(defined(blockServerClients[size]), 'invalid client block size')
+        return blockServerClients[size]
+    }
+
+    static newClient (name) {
+        // use camel case internally
+        const caName = ChangeCase.camelCase(name)
+        // use constant case for env vars
+        const coName = ChangeCase.constantCase(name)
+        // require args
+        assert(defined(process.env[`REDIS_${coName}_DB`]), `env.REDIS_${coName}_DB required`)
+        assert(defined(process.env[`REDIS_${coName}_HOST`]), `env.REDIS_${coName}_HOST required`)
+        assert(defined(process.env[`REDIS_${coName}_HOST`]), `env.REDIS_${coName}_PORT required`)
+        // build client args
+        const args = {
+            db: process.env[`REDIS_${coName}_DB`],
+            host: process.env[`REDIS_${coName}_HOST`],
+            port: process.env[`REDIS_${coName}_PORT`],
+        }
+        if (defined(process.env[`REDIS_${coName}_PASS`])) {
+            args.password = process.env[`REDIS_${coName}_PASS`]
+        }
+        // create client
+        clientsByName[caName] = new IORedis(args)
+        // log errors
+        clientsByName[caName].on('error', console.error)
+
+        return clientsByName[caName]
     }
 
     static async quit () {
-        return Promise.all([
-            lServerClient.quit(),
-            mServerClient.quit(),
-            sServerClient.quit(),
-        ])
+        return Promise.all(Object.keys(clientsByName).map(clientName => {
+            return RedisService.getClient(clientName).quit()
+        }))
     }
 
 }
+
+
+/* initalize redis clients */
+
+// one client for storing map of blocks to servers for each block size
+for (let size=0; size <= 3; size++) {
+    const name = `BLOCK_SERVERS_${size}`
+    blockServerClients[size] = RedisService.newClient(name)
+}
+
+// client for storing ratings
+RedisService.newClient('ratings')
+// client for storing block replace ids
+RedisService.newClient('replace')
+// client for storing replace tokens
+RedisService.newClient('replaceToken')
+
+/* exports */
+
+module.exports = RedisService

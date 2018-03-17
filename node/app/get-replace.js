@@ -1,9 +1,11 @@
 'use strict'
 
+/* npm modules */
+const defined = require('if-defined')
+
 /* app modules */
-const RedisService = require('../lib/redis-service')
+const BlockService = require('../lib/block-service')
 const ReplaceService = require('../lib/replace-service')
-const ServerService = require('../lib/server-service')
 
 /* exports */
 module.exports = getReplace
@@ -20,11 +22,15 @@ async function getReplace (req, res) {
     }
     // get download info for replacement blocks
     else {
-        const blocks = await RedisService.getBlocks(replace.size, [replace.b0, replace.b1])
-
-        res.json({
-            b0: { urls: ServerService.getUrlsForBlock(blocks[0]) },
-            b1: { urls: ServerService.getUrlsForBlock(blocks[1]) },
-        })
+        // get replacement blocks
+        const blocks = await BlockService.getBlocks(replace.size, [replace.b0, replace.b1])
+        // ids are not validated when set so one or both may not exist
+        if (defined(blocks[replace.b0]) && defined(blocks[replace.b1])) {
+            res.json([ blocks[replace.b0].urls, blocks[replace.b1].urls ])
+        }
+        // otherwise 404
+        else {
+            res.status(404).send()
+        }
     }
 }

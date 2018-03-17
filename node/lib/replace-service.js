@@ -9,7 +9,7 @@ const RedisService = require('./redis-service')
 const assert = require('../lib/assert')
 
 /* globals */
-const replaceRegExp = /^[sml]:[0-9a-f]{32}:[0-9a-f]{32}$/
+const replaceRegExp = /^[0-3]:[0-9a-f]{32}:[0-9a-f]{32}$/
 const signatureRegExp = /^[0-9a-f]{64}$/
 const tokenRegExp = /^[0-9a-f]{32}$/
 
@@ -34,7 +34,7 @@ module.exports = class ReplaceService {
         const token = digest.substr(0, 32)
         const secret = digest.substr(32, 32)
         // save token
-        await RedisService.replaceTokenClient().set(token, secret)
+        await RedisService.getClient('replaceToken').set(token, secret)
 
         return { token, secret }
     }
@@ -52,7 +52,7 @@ module.exports = class ReplaceService {
         // validate args
         assert(token.match(tokenRegExp), 'invalid token')
         // get replace entry for token
-        const replace = await RedisService.replaceClient().get(token)
+        const replace = await RedisService.getClient('replace').get(token)
         if (!replace) return
         // deleted
         if (replace === 'x') {
@@ -90,16 +90,17 @@ module.exports = class ReplaceService {
         assert(defined(args.signature) && args.signature.match(signatureRegExp), 'invalid signature')
         assert(defined(args.token) && args.token.match(tokenRegExp), 'invalid token')
         // get secret for token
-        const secret = await RedisService.replaceTokenClient().get(args.token)
+        const secret = await RedisService.getClient('replaceToken').get(args.token)
         assert(secret, 'invalid token')
         // create hmac to validate signature
-        const hmac = crypto.createHmac('sha256', secret);
+        const hmac = crypto.createHmac('sha256', Buffer.from(secret, 'hex'));
         hmac.update(args.replace)
         const signature = hmac.digest('hex')
+        console.log(signature)
         // validate signature
         assert(args.signature === signature, 'invalid signature')
         // store replacement id for token
-        await RedisService.replaceClient().set(args.token, args.replace)
+        await RedisService.getClient('replace').set(args.token, args.replace)
     }
 
 }

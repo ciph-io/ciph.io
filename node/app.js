@@ -2,6 +2,7 @@
 
 /* npm modules */
 const express = require('express')
+const multer = require('multer')
 
 /* initialize process.env */
 require('./lib/config')
@@ -13,7 +14,9 @@ const errorWrapper = require('./lib/error-wrapper')
 
 /* route handlers */
 const getBlock = require('./app/get-block')
+const getBlocks = require('./app/get-blocks')
 const getRandom = require('./app/get-random')
+const getRatingsToken = require('./app/get-ratings-token')
 const getReplace = require('./app/get-replace')
 const getReplaceToken = require('./app/get-replace-token')
 const postPublishFinish = require('./app/post-publish-finish')
@@ -50,16 +53,37 @@ app.on('error', (err) => {
     throw new Error(`listen on port ${process.env.PORT} failed: ${msg}`)
 })
 
+// multer middleware for block upload
+const upload = multer({
+    dest: process.env.UPLOAD_DIR,
+    limits: {
+        fieldSize: 256,
+        fields: 16,
+        fileSize: 16*1024*1024,
+        files: 1,
+        parts: 16,
+        headerPairs: 16,
+    },
+})
+
 /* express routes */
 
 app.get('/block', errorWrapper(getBlock))
+app.get('/blocks', errorWrapper(getBlocks))
 app.get('/random', errorWrapper(getRandom))
+app.get('/ratings/token', errorWrapper(getRatingsToken))
 app.get('/replace', errorWrapper(getReplace))
 app.get('/replace/token', errorWrapper(getReplaceToken))
 app.post('/publish/finish', errorWrapper(postPublishFinish))
 app.post('/publish/start', errorWrapper(postPublishStart))
 app.post('/replace', errorWrapper(postReplace))
-app.post('/upload', errorWrapper(postUpload))
+app.post('/upload', upload.single('block'), errorWrapper(postUpload))
+
+/* 404 handler */
+
+app.use((req,res) => {
+    res.status(404).json({error: 'not found'})
+});
 
 /* error handler */
 
