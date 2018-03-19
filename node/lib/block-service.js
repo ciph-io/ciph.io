@@ -13,7 +13,7 @@ const KB = 1024
 const MB = 1024*KB
 
 const blockIdRegExp = /^[0-9a-f]{32}$/
-const blockSizes = [ 256*KB, 1*MB, 4*MB, 16*MB ]
+const blockSizes = [ 4KB, 16KB, 64KB, 256*KB, 1*MB, 4*MB, 16*MB ]
 
 /* exports */
 module.exports = class BlockService {
