@@ -198,7 +198,7 @@ class RedisService {
 /* initalize redis clients */
 
 // one client for storing map of blocks to servers for each block size
-for (let size=0; size <= 3; size++) {
+for (let size=0; size <= 6; size++) {
     const name = `BLOCK_SERVERS_${size}`
     blockServerClients[size] = RedisService.newClient(name)
 }

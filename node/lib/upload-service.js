@@ -5,14 +5,12 @@ const fs = require('mz/fs')
 const hasha = require('hasha')
 
 /* app modules */
+const BlockService = require('./block-service')
 const ServerService = require('./server-service')
 const assert = require('./assert')
 
 /* globals */
-const KB = 1024
-const MB = 1024*KB
-
-const blockSizes = [ 256*KB, 1*MB, 4*MB, 16*MB ]
+const blockSizes = BlockService.getBlockSizes()
 
 /* exports */
 module.exports = class UploadService {

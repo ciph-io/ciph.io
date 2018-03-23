@@ -28,19 +28,21 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/2.3.3/shaka-player.compiled.debug.externs.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/2.3.3/shaka-player.compiled.debug.js"></script>
+
+    <script src="/js/ciph-container-client.js"></script>
     <script src="/js/ciph-player.js"></script>
 
 </head>
 
 <body>
 
-    <img id="ciph-logo" src="/img/ciph-logo-small.png" alt="c:ph logo" />
+    <img id="ciph-logo" src="/img/ciph-logo-small.png" alt="ciph logo" />
 
     <video id="video" controls autoplay></video>
 
     <script>
 
-        new CiphPlayer('video', '/test/test.mpd')
+        window.ciphPlayer = new CiphPlayer('video', '0-2-df94f3bb8870e1113d76893775f31eca-cd9d27d987fb4040cd08d542ac299b21-9e0b69efdcd79879d1743f6480185aad-e624a6d90c2411a453683013b7e9421f539c59460efc80a04539655d30463a91')
 
     </script>
 

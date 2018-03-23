@@ -4,9 +4,9 @@
     window.CiphPlayer = CiphPlayer
 
     function CiphPlayer (videoElmId, videoUrl) {
+        this.client = new CiphContainerClient(videoUrl)
         this.videoElmId = videoElmId
         this.videoElm = document.getElementById(this.videoElmId)
-        this.videoUrl = videoUrl
 
         if (!window.shaka) {
             console.error('shaka player not loaded')
@@ -26,6 +26,8 @@
             .registerResponseFilter(responseFilter.bind(this))
 
         this.shaka.addEventListener('error', onErrorEvent)
+
+        // this.shaka.addTextTrack('http://dev.ciph.io/test/eng-31055.vtt', 'eng', 'subtitle', 'text/vtt')
 
         this.shaka.load(videoUrl).catch(onError)
     }

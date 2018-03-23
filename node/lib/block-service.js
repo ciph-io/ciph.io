@@ -13,7 +13,7 @@ const KB = 1024
 const MB = 1024*KB
 
 const blockIdRegExp = /^[0-9a-f]{32}$/
-const blockSizes = [ 4KB, 16KB, 64KB, 256*KB, 1*MB, 4*MB, 16*MB ]
+const blockSizes = [ 4*KB, 16*KB, 64*KB, 256*KB, 1*MB, 4*MB, 16*MB ]
 
 /* exports */
 module.exports = class BlockService {
@@ -21,6 +21,10 @@ module.exports = class BlockService {
     static async getBlock (size, id) {
         const block = await RedisService.getBlockServers(size, id)
         return { urls: ServerService.getUrlsForBlock(block) }
+    }
+
+    static getBlockSizes () {
+        return blockSizes
     }
 
     static async getBlocks (size, ids) {
