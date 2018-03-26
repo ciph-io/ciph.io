@@ -52,16 +52,14 @@ async function httpRequest (uri, request, requestType) {
     let canceled = false;
     // get file
     try {
-        const buffer = await request.ciphPlayer.client.getFile(fileName)
+        const data = await request.ciphPlayer.client.getFile(fileName)
 
-        return shaka.net.HttpPluginUtils.makeResponse(
-            {},
-            buffer,
-            200,
-            uri,
-            null,
-            requestType
-        )
+        return {
+            uri: uri,
+            data: data,
+            headers: {},
+            fromCache: false,
+        }
     }
     catch (err) {
         return Promise.reject(
