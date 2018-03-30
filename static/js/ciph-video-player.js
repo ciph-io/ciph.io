@@ -2,9 +2,9 @@
 
 'use strict'
 
-window.CiphPlayer = CiphPlayer
+window.CiphVideoPlayer = CiphVideoPlayer
 
-function CiphPlayer (videoElmId, videoUrl) {
+function CiphVideoPlayer (videoElmId, videoUrl) {
     this.client = new CiphContainerClient(videoUrl)
     this.videoElmId = videoElmId
     this.videoElm = document.getElementById(this.videoElmId)
@@ -35,24 +35,25 @@ function CiphPlayer (videoElmId, videoUrl) {
     })
 }
 
-CiphPlayer.prototype = {
+CiphVideoPlayer.prototype = {
 
 }
 
 /* private methods */
 
 function assert (isTrue, msg) {
-    if (!isTrue) throw new Error(msg)
+    if (!isTrue) {
+        alert(msg)
+        throw new Error(msg)
+    }
 }
 
 async function httpRequest (uri, request, requestType) {
     // split scheme from file
-    const [, fileName] = uri.split(':')
-    // set canceled flag
-    let canceled = false;
+    const [, fileName] = uri.split(':')     
     // get file
     try {
-        const data = await request.ciphPlayer.client.getFile(fileName)
+        const data = await request.ciph.client.getFile(fileName)
 
         return {
             uri: uri,
@@ -83,7 +84,7 @@ function onError (error) {
 
 function requestFilter (type, request) {
     // and player instance to request
-    request.ciphPlayer = this
+    request.ciph = this
     return request
 }
 
