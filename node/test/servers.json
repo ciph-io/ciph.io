@@ -1,0 +1,59 @@
+[
+    {
+        "id": "0",
+        "secret": "00",
+        "type": "web",
+        "url": "https://web-1.ciph.io/"
+    },
+    {
+        "dataDirs": [
+            "/data-1",
+            "/data-2",
+            "/data-3",
+            "/data-4"
+        ],
+        "id": "1",
+        "secret": "00",
+        "shard": 0,
+        "shardPrefix": 2,
+        "shards": 2,
+        "type": "data",
+        "url": "https://data-1.ciph.io"
+    },
+    {
+        "id": "2",
+        "secret": "00",
+        "shard": 1,
+        "shardPrefix": 2,
+        "shards": 2,
+        "type": "data",
+        "url": "https://data-2.ciph.io"
+    },
+    {
+        "id": "3",
+        "secret": "00",
+        "shard": 0,
+        "shardPrefix": 3,
+        "shards": 3,
+        "type": "proxy",
+        "url": "https://proxy-1.ciph.io"
+    },
+    {
+        "id": "4",
+        "secret": "00",
+        "shard": 1,
+        "shardPrefix": 3,
+        "shards": 3,
+        "type": "proxy",
+        "url": "https://proxy-1.ciph.io"
+    },
+    {
+        "id": "5",
+        "secret": "00",
+        "shard": 2,
+        "shardPrefix": 3,
+        "shards": 3,
+        "type": "proxy",
+        "url": "https://proxy-1.ciph.io"
+    }
+]

@@ -15,8 +15,8 @@ module.exports = class PublishService {
      * get server to publish block to and create temporary entry for block
      * indicating that upload is in progress.
      *
-     * blockId + time is signed with server secret and server will reject
-     * upload unless this signature is valid and not expired.
+     * size + blockId is signed with server secret and server will reject
+     * upload unless signature is valid.
      *
      * @param {integer|string} size
      * @param {string} blockId
@@ -26,17 +26,14 @@ module.exports = class PublishService {
     static async publishStart (size, blockId) {
         assert(BlockService.isValidBlockSize(size), 'invalid size')
         assert(BlockService.isValidBlockId(blockId), 'invalid blockId')
-        // get current time
-        const time = Date.now().toString()
         // set new key for block only if not set - throws on error
-        await RedisService.createNewBlock(size, blockId, time)
+        await RedisService.createNewBlock(size, blockId)
         // get upload server for block
-        const server = ServerService.getUploadServer()
+        const server = ServerService.getDataServer(blockId)
         // sign block id and time to authorize upload for server
-        const signature = ServerService.getServerSignature(size+blockId+time, server.id)
+        const signature = ServerService.getServerSignature(size+blockId+server.id, server.id)
 
         return {
-            time: time,
             url: `${server.url}/upload`,
             signature: signature,
         }
@@ -45,7 +42,7 @@ module.exports = class PublishService {
     /**
      * @function publishFinish
      *
-     * takes signed serverId+blockId and adds server to block
+     * takes signed size+serverId+blockId and adds server to block
      *
      * @param {integer|string} size
      * @param {string} blockId

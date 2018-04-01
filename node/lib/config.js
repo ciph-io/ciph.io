@@ -4,12 +4,12 @@
 const path = require('path')
 
 /* npm modules */
-const Bluebird = require('bluebird')
-const ifDefined = require('if-defined')
 const getEnv = require('get-env')
 
-global.defined = ifDefined
-global.Promise = Bluebird
+/* globals */
+global.Promise = require('bluebird')
+global.assert = require('./assert')
+global.defined = require('if-defined')
 
 setConfigDefault('DATA_ROOT', path.resolve(__dirname, '../../download'))
 setConfigDefault('HOST', 'dev.ciph.io')

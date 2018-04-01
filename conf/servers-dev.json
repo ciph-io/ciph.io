@@ -1,7 +1,20 @@
 [
     {
         "id": "0",
-        "url": "http://dev.ciph.io",
-        "secret": "ddc6d50a5b04f1a7c5d6e6af13eb81e42e3afac0005280c702021d850efce9b3"
+        "secret": "ddc6d50a5b04f1a7c5d6e6af13eb81e42e3afac0005280c702021d850efce9b3",
+        "type": "web",
+        "url": "http://dev.ciph.io"
+    },
+    {
+        "id": "1",
+        "secret": "ddc6d50a5b04f1a7c5d6e6af13eb81e42e3afac0005280c702021d850efce9b3",
+        "type": "data",
+        "url": "http://dev.ciph.io"
+    },
+    {
+        "id": "2",
+        "secret": "ddc6d50a5b04f1a7c5d6e6af13eb81e42e3afac0005280c702021d850efce9b3",
+        "type": "proxy",
+        "url": "http://dev.ciph.io"
     }
 ]

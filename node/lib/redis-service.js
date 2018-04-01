@@ -31,8 +31,8 @@ class RedisService {
      *
      * @returns {Promise<undefined>}
      */
-    static async createNewBlock (size, id, time) {
-        const res = await RedisService.getBlockServerClient(size).setnx(id, `U,${time}`)
+    static async createNewBlock (size, id) {
+        const res = await RedisService.getBlockServerClient(size).setnx(id, 'U')
         assert(res === 1, 'blockId exists')
     }
 
@@ -144,6 +144,12 @@ class RedisService {
 
     /* redis client management methods */
 
+    static async disconnectAll () {
+        return Promise.all(Object.keys(clientsByName).map(clientName => {
+            return RedisService.getClient(clientName).disconnect()
+        }))
+    }
+
     static async flushAll () {
         return Promise.all(Object.keys(clientsByName).map(clientName => {
             return RedisService.getClient(clientName).flushdb()
@@ -168,7 +174,7 @@ class RedisService {
         // require args
         assert(defined(process.env[`REDIS_${coName}_DB`]), `env.REDIS_${coName}_DB required`)
         assert(defined(process.env[`REDIS_${coName}_HOST`]), `env.REDIS_${coName}_HOST required`)
-        assert(defined(process.env[`REDIS_${coName}_HOST`]), `env.REDIS_${coName}_PORT required`)
+        assert(defined(process.env[`REDIS_${coName}_PORT`]), `env.REDIS_${coName}_PORT required`)
         // build client args
         const args = {
             db: process.env[`REDIS_${coName}_DB`],
@@ -204,11 +210,11 @@ for (let size=0; size <= 6; size++) {
 }
 
 // client for storing ratings
-RedisService.newClient('ratings')
+// RedisService.newClient('ratings')
 // client for storing block replace ids
-RedisService.newClient('replace')
+// RedisService.newClient('replace')
 // client for storing replace tokens
-RedisService.newClient('replaceToken')
+// RedisService.newClient('replaceToken')
 
 /* exports */
 

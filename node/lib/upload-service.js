@@ -18,12 +18,8 @@ module.exports = class UploadService {
     static async processUpload (args, file) {
         try {
             // validate signature
-            const requestSignature = ServerService.getServerSignature(args.size+args.blockId+args.time)
+            const requestSignature = ServerService.getServerSignature(args.size+args.blockId+serverId)
             assert(requestSignature === args.signature, 'invalid signature')
-            // get time since signature issued in seconds
-            const elapsed = (Date.now() - args.time) / 1000
-            // expire after 60 seconds
-            assert(elapsed < 60, 'signature expired')
             // validate size
             assert(blockSizes[args.size] === file.size, 'invalid size')
             // validate block id
