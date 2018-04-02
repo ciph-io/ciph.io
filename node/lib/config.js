@@ -11,7 +11,6 @@ global.Promise = require('bluebird')
 global.assert = require('./assert')
 global.defined = require('if-defined')
 
-setConfigDefault('DATA_ROOT', path.resolve(__dirname, '../../download'))
 setConfigDefault('HOST', 'dev.ciph.io')
 setConfigDefault('PORT', '9999')
 setConfigDefault('PROD', getEnv() === 'prod')

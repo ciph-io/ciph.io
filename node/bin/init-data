@@ -17,8 +17,8 @@ require('../lib/config')
 
 /* app modules */
 const BlockService = require('../lib/block-service')
+const RedisService = require('../lib/redis-service')
 const ServerService = require('../lib/server-service')
-const blockId = require('../lib/util/block-id')
 
 /* globals */
 const hexChars = [0,1,2,3,4,5,6,7,8,9,'a','b','c','d','e','f']
@@ -31,8 +31,12 @@ const server = ServerService.getServer()
 assert(server.type === 'data', 'must run init-data on data server')
 // get web server
 const webServer = ServerService.getWebServer()
+// number of random files to create (per size)
+const numRandomFiles = parseInt(process.env.NUM_RANDOM_FILE) || 10
 
-initData().catch(console.error)
+initData().catch(console.error).then(async () => {
+    await RedisService.quit()
+})
 
 async function initData () {
     const dataDirs = server.dataDirs
@@ -80,28 +84,39 @@ async function initData () {
             const sizeDirPath = path.resolve(prefixDirPath, i.toString())
             // create size dir
             await fs.ensureDir(sizeDirPath)
-            // create random file in path
-            await createRandomFile(sizeDirPath, i, bytes, prefixDir.hex, timeFilePath)
         }
 
     }
 
+    // create random files
+    for (let i=0; i < numRandomFiles; i++) {
+        // create random file for each size
+        for (let j=0; j < bytesBySize.length; j++) {
+            // create random file in path
+            await createRandomFile(j)
+        }
+    }
+
 }
 
-async function createRandomFile (sizeDirPath, size, bytes, prefix, timeFilePath) {
+async function createRandomFile (size) {
+    const bytes = bytesBySize[size]
+
+    let blockId
     let data
-    let digest
 
     // get random data with matching hash prefix
     while (true) {
         data = await crypto.randomBytes(bytes)
-        digest = blockId(data)
+        blockId = BlockService.getBlockId(data)
+        // get prefix as integer
+        const int = parseInt(blockId.substr(0, server.shardPrefix), 16)
         // prefix matches
-        if (digest.substr(0, prefix.length) === prefix) {
+        if (int % server.shards === server.shard) {
             // try to register block id - will error if exists
             try {
                 await requestPromise({
-                    body: { blockId: digest, size: size },
+                    body: { blockId: blockId, size: size },
                     json: true,
                     method: 'POST',
                     uri: `${webServer.url}/publish/start`,
@@ -115,22 +130,22 @@ async function createRandomFile (sizeDirPath, size, bytes, prefix, timeFilePath)
         }
     }
 
-    const filePath = path.resolve(sizeDirPath, `${digest}.ciph`)
+    const blockPath = BlockService.getBlockPath(size, blockId)
 
-    console.log(`saving file ${filePath}`)
+    console.log(`saving file ${blockPath.blockFilePath}`)
 
     // save file
-    await fs.writeFile(filePath, data)
+    await fs.writeFile(blockPath.blockFilePath, data)
     // set times on file to match time file
-    await touch(filePath, {ref: timeFilePath})
+    await touch(blockPath.blockFilePath, {ref: blockPath.timeFilePath})
 
     // create publish signature
-    const signature = ServerService.getServerSignature(size+digest+server.id)
+    const signature = ServerService.getServerSignature(size+blockId+server.id)
 
     // finish publish
     await requestPromise({
         body: {
-            blockId: digest,
+            blockId: blockId,
             serverId: server.id,
             signature: signature,
             size: size,

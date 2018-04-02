@@ -19,6 +19,11 @@ const serverTypes = {
     web: {},
 }
 
+const shardDirs = {
+    '2': 256,
+    '3': 4096,
+}
+
 // load server config file
 const serverConf = JSON.parse( fs.readFileSync(process.env.SERVER_CONF_FILE, 'utf8') )
 // map of servers by type
@@ -35,11 +40,26 @@ for (const server of serverConf) {
     if (defined(server.shard)) {
         assert(defined(server.shards) && defined(server.shardPrefix), 'shard server must have shards and shardPrefix defined')
     }
+    if (server.type === 'data') {
+        // data servers must have shard prefix to split files into folders
+        assert(shardDirs[server.shardPrefix], 'inavlid shardPrefix')
+        // total number of shard dirs
+        server.shardDirs = shardDirs[server.shardPrefix]
+        // data servers must have data dir(s)
+        assert(Array.isArray(server.dataDirs), 'invalid dataDirs')
+        server.numDataDirs = server.dataDirs.length
+    }
     // group servers by type
     serversByType[server.type].push(server)
     // convert secret to buffer for crypto operations
     server.secretBuffer = Buffer.from(server.secret, 'hex')
+    // freeze server conf
+    Object.freeze(server)
 }
+
+// freeze server conf
+Object.freeze(serverConf)
+Object.freeze(serversByType)
 
 /* exports */
 module.exports = class ServerService {
