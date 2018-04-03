@@ -500,9 +500,10 @@ async function getSubBlock (blockSize, blockId, retry) {
  * @returns {Promise}
  */
 async function loadHead (link) {
+    let block
     // download and xor blocks
     try {
-        const block = await this.getBlock(link.blockSize, link.blockId0, link.blockId1)
+        block = await this.getBlock(link.blockSize, link.blockId0, link.blockId1)
     }
     catch (err) {
         const message = defined(err) ? err.message : 'unknown'
