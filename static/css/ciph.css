@@ -10,7 +10,7 @@ img {
 
 
 #ciph-browser {
-    margin-top: 50px;
+    margin-top: 25px;
 }
 
 #ciph-logo {
@@ -27,6 +27,7 @@ img {
     margin: 0 auto;
     font-family: arial;
     font-size: 125%;
+    padding: 0 5px;
 }
 
 #ciph-page a {
