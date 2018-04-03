@@ -1,0 +1,13 @@
+#!/usr/bin/env node
+
+'use strict'
+
+/* initialize process.env */
+require('../lib/config')
+
+/* app modules */
+const RedisService = require('../lib/redis-service')
+
+RedisService.flushAll().then(async () => {
+    await RedisService.quit()
+})
