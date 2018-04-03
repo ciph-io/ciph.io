@@ -14,11 +14,11 @@ img {
 }
 
 #ciph-logo {
-    
+    margin: 0 auto;
 }
 
 #ciph-header {
-    padding: 10px;
+    padding: 2px;
 }
 
 #ciph-page {
