@@ -245,8 +245,6 @@ async function deriveKey (password, salt) {
 async function get (url, options = {}) {
     if (!defined(options.credentials))
         options.credentials = 'omit'
-    if (!defined(options.mode))
-        options.mode = 'no-cors'
 
     const res = await fetch(url, options)
 
