@@ -30,8 +30,8 @@ module.exports = class PublishService {
         await RedisService.createNewBlock(size, blockId)
         // get upload server for block
         const server = ServerService.getDataServer(blockId)
-        // sign block id and time to authorize upload for server
-        const signature = ServerService.getServerSignature(size+blockId+server.id, server.id)
+        // sign size and block id to authorize upload for server
+        const signature = ServerService.getServerSignature(size+blockId, server.id)
 
         return {
             url: `${server.url}/upload`,

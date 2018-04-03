@@ -34,7 +34,8 @@ module.exports = class BlockService {
      */
     static async getBlock (size, blockId) {
         const block = await RedisService.getBlockServers(size, blockId)
-        return { urls: ServerService.getUrlsForBlock(block) }
+
+        return { urls: BlockService.getUrlsForBlock(block) }
     }
 
     /**
@@ -95,6 +96,58 @@ module.exports = class BlockService {
     }
 
     /**
+     * @function getBlockUrl
+     *
+     * get download url for block
+     *
+     * @param {integer|string} size
+     * @param {string} blockId
+     * @param {string} serverId
+     *
+     * @returns {string}
+     */
+    static getBlockUrl (size, blockId, serverId) {
+        assert(BlockService.isValidBlockId(blockId), 'invalid blockId')
+        assert(BlockService.isValidBlockSize(size), 'invalid size')
+        // get server by id or current server
+        const server = defined(serverId)
+            ? ServerService.getServerById(serverId)
+            : ServerService.getServer()
+        // build full url for data servers
+        if (server.type === 'data') {
+            // get block prefix for server
+            const prefix = blockId.substr(0, server.shardPrefix)
+            // convert hex prefix to integer
+            const int = parseInt(prefix, 16)
+            // check that server provides shard that block is in
+            assert(int % server.shards === server.shard, 'invalid shard')
+
+            // if there are multiple data dirs then include in url
+            if (server.numDataDirs > 1) {
+                // bucket prefix dirs into data dirs sequenitally
+                const dataDirNum = Math.floor(prefixInt / (server.shardDirs / server.numDataDirs))
+
+                return `${server.url}/download/${dataDirNum}/${prefix}/${size}/${blockId}.ciph`
+            }
+            else {
+                return `${server.url}/download/${prefix}/${size}/${blockId}.ciph`
+            }
+        }
+        // use generic download path for other servers
+        else {
+            return `${server.url}/download?size=${size}&blockId=${blockId}`
+        }
+
+        // get data dir for block
+        const dataDir = BlockService.getDataDir(int, server)
+
+        return {
+            blockFilePath: path.resolve(dataDir, prefix, size.toString(), `${blockId}.ciph`),
+            timeFilePath: path.resolve(dataDir, 'time.file')
+        }
+    }
+
+    /**
      * @function getBlocks
      *
      * get info for blocks
@@ -112,7 +165,7 @@ module.exports = class BlockService {
         for (const result of results) {
             if (result) {
                 blocks[result.id] = {
-                    urls: ServerService.getUrlsForBlock(result)
+                    urls: BlockService.getUrlsForBlock(result)
                 }
             }
         }
@@ -156,11 +209,29 @@ module.exports = class BlockService {
 
             results.push({
                 blockId: blockServer.id,
-                urls: ServerService.getUrlsForBlock(blockServer),
+                urls: BlockService.getUrlsForBlock(blockServer),
             })
         }
 
         return results
+    }
+
+    /**
+     * @function getUrlsForBlock
+     *
+     * return list of urls built from block data
+     *
+     * @param {object} block
+     * @param {string} block.id
+     * @param {array}  block.servers
+     * @param {string} block.size
+     *
+     * @return {array}
+     */
+    static getUrlsForBlock (block) {
+        return block.servers.map(
+            serverId => BlockService.getBlockUrl(block.size, block.id, serverId)
+        )
     }
 
     static isValidBlockId (blockId) {

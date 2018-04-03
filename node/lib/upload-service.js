@@ -3,11 +3,11 @@
 /* npm modules */
 const fs = require('mz/fs')
 const hasha = require('hasha')
+const touch = require('touch')
 
 /* app modules */
 const BlockService = require('./block-service')
 const ServerService = require('./server-service')
-const assert = require('./assert')
 
 /* globals */
 const blockSizes = BlockService.getBlockSizes()
@@ -18,7 +18,7 @@ module.exports = class UploadService {
     static async processUpload (args, file) {
         try {
             // validate signature
-            const requestSignature = ServerService.getServerSignature(args.size+args.blockId+serverId)
+            const requestSignature = ServerService.getServerSignature(args.size+args.blockId)
             assert(requestSignature === args.signature, 'invalid signature')
             // validate size
             assert(blockSizes[args.size] === file.size, 'invalid size')
@@ -26,9 +26,11 @@ module.exports = class UploadService {
             const hash = await hasha.fromFile(file.path, {algorithm: 'sha256'})
             assert(hash.substr(0,32) === args.blockId, 'invalid upload')
             // get path for file
-            const path = `${process.env.DATA_ROOT}/${args.blockId.substr(0, 2)}/${args.size}/${args.blockId}.ciph`
+            const blockPath = BlockService.getBlockPath(args.size, args.blockId)
             // move file into place
-            await fs.rename(file.path, path)
+            await fs.rename(file.path, blockPath.blockFilePath)
+            // set times on file to match time file
+            await touch(blockPath.blockFilePath, {ref: blockPath.timeFilePath})
             // create signature with server id and block id
             const serverId = process.env.SERVER_ID
             const signature = ServerService.getServerSignature(args.size+args.blockId+serverId)

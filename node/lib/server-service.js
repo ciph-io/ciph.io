@@ -65,27 +65,6 @@ Object.freeze(serversByType)
 module.exports = class ServerService {
 
     /**
-     * @function getBlockUrlForServer
-     *
-     * get block download user for server
-     *
-     * @param {string} size
-     * @param {string} blockId
-     * @param {string} serverId
-     *
-     * @returns {string}
-     */
-    static getBlockUrlForServer (size, blockId, serverId) {
-        // default to current server
-        if (!defined(serverId)) {
-            serverId = process.env.SERVER_ID
-        }
-        const server = ServerService.getServerById(serverId)
-
-        return `${server.url}/download/${size}/${blockId}.ciph`
-    }
-
-    /**
      * @function getDataServer
      *
      * get data server, sharded by block id, and randomized
@@ -186,23 +165,6 @@ module.exports = class ServerService {
         assert(serverConf[id], 'invalid server id')
 
         return serverConf[id]
-    }
-
-    /**
-     * @function getUrlsForBlock
-     *
-     * return list of urls built from block data
-     *
-     * @param {object} block
-     * @param {string} block.id
-     * @param {array}  block.servers
-     * @param {string} block.size
-     *
-     * @return {array}
-     */
-    static getUrlsForBlock (block) {
-        return block.servers.map(serverId =>
-            ServerService.getBlockUrlForServer(block.size, block.id, serverId))
     }
 
     /**
