@@ -54,6 +54,7 @@ CiphContainerClient.prototype = {
     decodeHead,
     decryptBlock,
     deriveKey,
+    get,
     getBlock,
     getBlockUrl,
     getBlocksForFile,
@@ -235,6 +236,38 @@ async function deriveKey (password, salt) {
 }
 
 /**
+ * @function get
+ *
+ * do fetch
+ *
+ * @returns Promise<object>
+ */
+async function get (url, options = {}) {
+    if (!defined(options.credentials))
+        options.credentials = 'omit'
+    if (!defined(options.mode))
+        options.mode = 'no-cors'
+
+    const res = await fetch(url, options)
+
+    if (res.ok) return res
+
+    let message = res.statusText
+    // try to get error from response
+    if (res.status === 400) {
+        try {
+            const json = await res.json()
+            if (json.error) {
+                message = json.error
+            }
+        }
+        catch (err) {}
+    }
+
+    throw new Error(message)
+}
+
+/**
  * @function findFile
  *
  * search for file by string name or regular expression
@@ -298,7 +331,7 @@ async function getBlock (blockSize, blockId0, blockId1) {
  */
 async function getBlockUrl (blockSize, blockId) {
     // get download url from api
-    const res = await fetch(`/block?size=${blockSize}&id=${blockId}`).then(rejectOnError)
+    const res = await this.get(`/block?size=${blockSize}&id=${blockId}`)
     // get json response
     const block = await res.json()
     // require urls
@@ -446,7 +479,7 @@ function getPage () {
 async function getSubBlock (blockSize, blockId, retry) {
     try {
         const url = await this.getBlockUrl(blockSize, blockId, retry)
-        const res = await fetch(url).then(rejectOnError)
+        const res = await this.get(url)
         const data = await res.arrayBuffer()
 
         return data
@@ -582,24 +615,6 @@ function buffersEqual (bufA, bufB) {
 
 function defined (val) {
     return val !== undefined
-}
-
-async function rejectOnError (res) {
-    if (res.ok) return res
-
-    let message = res.statusText
-    // try to get error from response
-    if (res.status === 400) {
-        try {
-            const json = await res.json()
-            if (json.error) {
-                message = json.error
-            }
-        }
-        catch (err) {}
-    }
-
-    throw new Error(message)
 }
 
 /**
