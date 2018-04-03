@@ -203,18 +203,21 @@ class RedisService {
 
 /* initalize redis clients */
 
-// one client for storing map of blocks to servers for each block size
-for (let size=0; size <= 6; size++) {
-    const name = `BLOCK_SERVERS_${size}`
-    blockServerClients[size] = RedisService.newClient(name)
+if (!defined(process.env.NO_REDIS)) {
+    // one client for storing map of blocks to servers for each block size
+    for (let size=0; size <= 6; size++) {
+        const name = `BLOCK_SERVERS_${size}`
+        blockServerClients[size] = RedisService.newClient(name)
+    }
+
+    // client for storing ratings
+    // RedisService.newClient('ratings')
+    // client for storing block replace ids
+    // RedisService.newClient('replace')
+    // client for storing replace tokens
+    // RedisService.newClient('replaceToken')
 }
 
-// client for storing ratings
-// RedisService.newClient('ratings')
-// client for storing block replace ids
-// RedisService.newClient('replace')
-// client for storing replace tokens
-// RedisService.newClient('replaceToken')
 
 /* exports */
 
