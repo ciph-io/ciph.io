@@ -32,7 +32,7 @@ assert(server.type === 'data', 'must run init-data on data server')
 // get web server
 const webServer = ServerService.getWebServer()
 // number of random files to create (per size)
-const numRandomFiles = parseInt(process.env.NUM_RANDOM_FILE) || 10
+const numRandomFiles = parseInt(process.env.NUM_RANDOM_FILES) || 10
 
 initData().catch(console.error).then(async () => {
     await RedisService.quit()
