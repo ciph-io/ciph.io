@@ -27,10 +27,14 @@ module.exports = class UploadService {
             assert(hash.substr(0,32) === args.blockId, 'invalid upload')
             // get path for file
             const blockPath = BlockService.getBlockPath(args.size, args.blockId)
+            // set times on file to match time file
+            await touch(file.path, {ref: blockPath.timeFilePath})
             // move file into place
-            await fs.rename(file.path, blockPath.blockFilePath)
+            await fs.copyFile(file.path, blockPath.blockFilePath)
             // set times on file to match time file
             await touch(blockPath.blockFilePath, {ref: blockPath.timeFilePath})
+            // delete upload file
+            await fs.unlink(file.path)
             // create signature with server id and block id
             const serverId = process.env.SERVER_ID
             const signature = ServerService.getServerSignature(args.size+args.blockId+serverId)
