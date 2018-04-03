@@ -210,7 +210,7 @@ async function deriveKey (password, salt) {
     // get key from password
     const key = await crypto.subtle.importKey(
         'raw',
-        bufferFromHex(password),
+        bufferFromString(password),
         { name: 'PBKDF2' },
         false,
         ['deriveKey']
@@ -219,7 +219,7 @@ async function deriveKey (password, salt) {
     const derivedKey = await crypto.subtle.deriveKey(
         {
             hash: { name: 'SHA-256' },
-            iterations: 100000,
+            iterations: 10000,
             name: 'PBKDF2',
             salt: bufferFromHex(salt),
         },
@@ -597,6 +597,10 @@ function bufferToHex (buffer) {
         hex += value
     }
     return hex
+}
+
+function bufferFromString (str) {
+    return new TextEncoder().encode(str)
 }
 
 function buffersEqual (bufA, bufB) {

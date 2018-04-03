@@ -12,7 +12,7 @@ global.assert = require('./assert')
 global.defined = require('if-defined')
 
 setConfigDefault('HOST', 'dev.ciph.io')
-setConfigDefault('PORT', '9999')
+setConfigDefault('PORT', '11000')
 setConfigDefault('PROD', getEnv() === 'prod')
 setConfigDefault('PROTOCOL', getEnv() === 'prod' ? 'https' : 'http')
 setConfigDefault('REDIS_CONF_FILE', path.resolve(__dirname, '../../conf/redis-dev.json'))

@@ -1,0 +1,21 @@
+{
+  "apps" : [{
+    "name"        : "web",
+    "script"      : "./app.js",
+    "watch"       : true,
+    "env": {
+      "NODE_ENV": "development",
+      "PORT": "11000",
+      "SERVER_ID": "0"
+    }
+  },{
+    "name"        : "data",
+    "script"      : "./app.js",
+    "watch"       : true,
+    "env": {
+      "NODE_ENV": "development",
+      "PORT": "11001",
+      "SERVER_ID": "1"
+    }
+  }]
+}

@@ -1,6 +1,8 @@
 body {
     margin: 0;
     background-color: black;
+    font-family: arial;
+    font-size: 125%;
 }
 
 img {
@@ -10,7 +12,10 @@ img {
 
 
 #ciph-browser {
-    margin-top: 25px;
+    margin: 20px auto;
+    width: 100%;
+    max-width: 900px;
+    padding: 0 5px;
 }
 
 #ciph-logo {
@@ -23,11 +28,6 @@ img {
 
 #ciph-page {
     color: #c2c2c2;
-    max-width: 800px;
-    margin: 0 auto;
-    font-family: arial;
-    font-size: 125%;
-    padding: 0 5px;
 }
 
 #ciph-page a {
@@ -35,6 +35,5 @@ img {
 }
 
 #ciph-video {
-    margin-left: 20vw;
-    width: 60vw;
+    width: 100%;
 }

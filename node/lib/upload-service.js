@@ -16,6 +16,7 @@ const blockSizes = BlockService.getBlockSizes()
 module.exports = class UploadService {
 
     static async processUpload (args, file) {
+        console.log("XXX", process.env.SERVER_ID, process.env.PORT)
         try {
             // validate signature
             const requestSignature = ServerService.getServerSignature(args.size+args.blockId)
