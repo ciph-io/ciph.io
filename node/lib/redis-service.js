@@ -3,11 +3,15 @@
 /* npm modules */
 const ChangeCase = require('change-case')
 const IORedis = require('ioredis')
+const fs = require('fs-extra')
 
 /* app modules */
 const assert = require('./assert')
 
 /* globals */
+
+// load server config file
+const redisConf = fs.readJsonSync(process.env.REDIS_CONF_FILE)
 
 // redis client indexed by name
 const clientsByName = {}
@@ -166,30 +170,13 @@ class RedisService {
         return blockServerClients[size]
     }
 
-    static newClient (name) {
-        // use camel case internally
-        const caName = ChangeCase.camelCase(name)
-        // use constant case for env vars
-        const coName = ChangeCase.constantCase(name)
-        // require args
-        assert(defined(process.env[`REDIS_${coName}_DB`]), `env.REDIS_${coName}_DB required`)
-        assert(defined(process.env[`REDIS_${coName}_HOST`]), `env.REDIS_${coName}_HOST required`)
-        assert(defined(process.env[`REDIS_${coName}_PORT`]), `env.REDIS_${coName}_PORT required`)
-        // build client args
-        const args = {
-            db: process.env[`REDIS_${coName}_DB`],
-            host: process.env[`REDIS_${coName}_HOST`],
-            port: process.env[`REDIS_${coName}_PORT`],
-        }
-        if (defined(process.env[`REDIS_${coName}_PASS`])) {
-            args.password = process.env[`REDIS_${coName}_PASS`]
-        }
+    static newClient (name, conf) {
         // create client
-        clientsByName[caName] = new IORedis(args)
+        clientsByName[name] = new IORedis(conf)
         // log errors
-        clientsByName[caName].on('error', console.error)
+        clientsByName[name].on('error', console.error)
 
-        return clientsByName[caName]
+        return clientsByName[name]
     }
 
     static async quit () {
@@ -204,10 +191,14 @@ class RedisService {
 /* initalize redis clients */
 
 if (!defined(process.env.NO_REDIS)) {
-    // one client for storing map of blocks to servers for each block size
+    // connect all clients
+    for (const name in redisConf) {
+        RedisService.newClient(name, redisConf[name])
+    }
+    // make sure all block clients defined
     for (let size=0; size <= 6; size++) {
-        const name = `BLOCK_SERVERS_${size}`
-        blockServerClients[size] = RedisService.newClient(name)
+        assert(defined(clientsByName[`blockServers${size}`]), `redis block server ${size} not defined`)
+        blockServerClients[size] = clientsByName[`blockServers${size}`]
     }
 
     // client for storing ratings

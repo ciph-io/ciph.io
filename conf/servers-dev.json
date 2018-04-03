@@ -12,6 +12,8 @@
         "id": "1",
         "secret": "ddc6d50a5b04f1a7c5d6e6af13eb81e42e3afac0005280c702021d850efce9b3",
         "shardPrefix": 2,
+        "shards": 1,
+        "shard": 0,
         "type": "data",
         "url": "http://dev.ciph.io"
     },
