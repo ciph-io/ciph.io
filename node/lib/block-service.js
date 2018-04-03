@@ -118,9 +118,9 @@ module.exports = class BlockService {
             // get block prefix for server
             const prefix = blockId.substr(0, server.shardPrefix)
             // convert hex prefix to integer
-            const int = parseInt(prefix, 16)
+            const prefixInt = parseInt(prefix, 16)
             // check that server provides shard that block is in
-            assert(int % server.shards === server.shard, 'invalid shard')
+            assert(prefixInt % server.shards === server.shard, 'invalid shard')
 
             // if there are multiple data dirs then include in url
             if (server.numDataDirs > 1) {
@@ -136,14 +136,6 @@ module.exports = class BlockService {
         // use generic download path for other servers
         else {
             return `${server.url}/download?size=${size}&blockId=${blockId}`
-        }
-
-        // get data dir for block
-        const dataDir = BlockService.getDataDir(int, server)
-
-        return {
-            blockFilePath: path.resolve(dataDir, prefix, size.toString(), `${blockId}.ciph`),
-            timeFilePath: path.resolve(dataDir, 'time.file')
         }
     }
 
