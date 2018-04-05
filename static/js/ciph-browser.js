@@ -34,6 +34,7 @@ CiphBrowser.prototype = {
     renderImage,
     renderPage,
     renderVideo,
+    setTitle,
 }
 
 function open (link) {
@@ -88,14 +89,25 @@ function renderPage () {
     // create page container
     this.browserElm.innerHTML = `<div id="ciph-page"></div>`
     // create page viewer
-    this.active = new CiphPageViewer('ciph-page', this.activeLink)
+    this.active = new CiphPageViewer('ciph-page', this.activeLink, this)
 }
 
 function renderVideo () {
     // create video tag
     this.browserElm.innerHTML = `<video id="ciph-video" controls autoplay></video>`
     // create video player
-    this.active = new CiphVideoPlayer('ciph-video', this.activeLink)
+    this.active = new CiphVideoPlayer('ciph-video', this.activeLink, this)
+}
+
+function setTitle (title, onPage) {
+    // add title to page
+    if (onPage !== false) {
+        const titleElm = document.createElement('h1')
+        titleElm.appendChild(document.createTextNode(title))
+        this.browserElm.insertBefore(titleElm, this.browserElm.childNodes[0])
+    }
+
+    document.title = title
 }
 
 /* private methods */

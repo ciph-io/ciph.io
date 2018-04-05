@@ -63,6 +63,7 @@ CiphContainerClient.prototype = {
     getPage,
     getSubBlock,
     findFile,
+    findFiles,
     loadHead,
     validate,
 }
@@ -280,21 +281,43 @@ function findFile (match) {
         return null
     }
 
-    var files = this.meta.files
-    var length = files.length
+    const found = this.findFiles(match)
+
+    return found.length > 0 ? found[0] : null
+}
+
+/**
+ * @function findFiles
+ *
+ * search for file(s) by string name or regular expression
+ *
+ * @param {string|RegExp} match
+ *
+ * @returns {array}
+ */
+function findFiles (match) {
+    // if meta does not contain files array then not found
+    if (!Array.isArray(this.meta.files)) {
+        return []
+    }
+
+    const files = this.meta.files
+    const length = files.length
+
+    const found = []
 
     if (typeof match === 'string') {
         for (let i=0; i < length; i++) {
-            if (files[i].name === match) return files[i]
+            if (files[i].name === match) found.push(files[i])
         }
     }
     else {
         for (let i=0; i < length; i++) {
-            if (files[i].name.match(match)) return files[i]
+            if (files[i].name.match(match)) found.push(files[i])
         }
     }
 
-    return null
+    return found
 }
 
 /**

@@ -16,10 +16,15 @@ img {
     width: 100%;
     max-width: 900px;
     padding: 0 5px;
+    clear: both;
+}
+
+#ciph-browser h1 {
+    color: #c2c2c2;
 }
 
 #ciph-logo {
-    margin: 0 auto;
+    float: right;
 }
 
 #ciph-header {
