@@ -20,8 +20,7 @@ function CiphBrowser (browserElmId) {
     this.activeContentType = ''
     this.activeLink = ''
     // get ciph link from url
-    const url = new URL(location.href)
-    this.render( url.searchParams.get('ciph') )
+    this.render(location.hash)
     // add event listener for url change
     window.addEventListener('popstate', popStateHandler)
 }
@@ -38,15 +37,28 @@ CiphBrowser.prototype = {
 }
 
 function open (link) {
-    // remove any protocol from url
-    link = link.replace(/^\w+:\/\/(.*?\/enter\?ciph=)?/, '')
-    // change url
-    history.pushState({}, '', `/enter?ciph=${link}`)
-    // render
-    this.render(link)
+    if (link.match(/^ciph:\/\//)) {
+        link = link.replace(/^ciph:\/\//, '')
+        // get block ids
+        const [,,blockId0, blockId1] = link.split('-')
+
+        crypto.subtle.digest(
+            { name: 'SHA-256' },
+            bufferFromHex(blockId0+blockId1)
+        ).then(digest => {
+            const httpLink = `/enter?ciph=${bufferToHex(digest)}#${link}`
+            history.pushState({}, '', httpLink)
+            this.render(link)
+        })
+    }
+    else {
+        history.pushState({}, '', link)
+        this.render(link)
+    }
 }
 
 function render (link) {
+    link = link.replace(/^.*?#/, '')
     // require valid looking link
     assert(typeof link === 'string' && link.match(linkRegExp), 'invalid link')
     // get content type
@@ -119,10 +131,30 @@ function assert (isTrue, msg) {
     }
 }
 
+function bufferFromHex (hex) {
+    const length = hex.length
+    assert(length % 2 === 0, 'invalid hex string')
+    const buffer = new ArrayBuffer(length / 2)
+    const arr = new Uint8Array(buffer)
+    for (let i = 0; i < length; i += 2) {
+        arr[i / 2] = parseInt(hex.substr(i, 2), 16)
+    }
+    return buffer
+}
+
+function bufferToHex (buffer) {
+    const arr = new Uint8Array(buffer)
+    let hex = ''
+    for (let i = 0; i < arr.length; ++i) {
+        let value = arr[i].toString(16)
+        if (value.length === 1) value = '0' + value
+        hex += value
+    }
+    return hex
+}
+
 function popStateHandler () {
-    // get ciph link from url
-    const url = new URL(location.href)
-    ciphBrowser.render( url.searchParams.get('ciph') )
+    ciphBrowser.render(location.hash)
 }
 
 })()

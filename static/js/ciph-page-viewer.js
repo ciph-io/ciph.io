@@ -4,6 +4,9 @@
 
 window.CiphPageViewer = CiphPageViewer
 
+const ciphLinkRegExp = /^ciph:\/\//
+const httpCiphLinkRegExp = /#\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}/
+
 function CiphPageViewer (pageElmId, link) {
     this.canceled = false
     this.client = new CiphContainerClient(link)
@@ -36,12 +39,16 @@ function cancel () {
 function render () {
     const md = markdownit().disable(['image'])
 
-    this.pageElm.innerHTML = md.render(this.markdown)
-    // get all links from page
-    const links = this.pageElm.getElementsByTagName('a')
+    const doc = new DOMParser().parseFromString(md.render(this.markdown), 'text/html')
+    // get all links from page - copy to array so collection doesn't change
+    // when dom modified
+    const col = doc.getElementsByTagName('a')
+    const links = []
+    for (let i=0; i < col.length; i++) links.push(col[i])
     // remove outbound links and open ciph links with JS
-    for (const link of links) {
-        if (link.href.match(/^ciph:\/\//)) {
+    for (let i=0; i < links.length; i++) {
+        const link = links[i]
+        if (link.href.match(ciphLinkRegExp) || link.href.match(httpCiphLinkRegExp)) {
             link.addEventListener('click', linkClickHandler)
         }
         else {
@@ -52,6 +59,11 @@ function render () {
             link.parentNode.replaceChild(span, link)
         }
     }
+
+    // empty
+    this.pageElm.innerHTML = ''
+    // set content
+    this.pageElm.appendChild(doc.getElementsByTagName('body')[0])
 
 }
 

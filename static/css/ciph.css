@@ -10,6 +10,13 @@ img {
     border: 0;
 }
 
+h1 {
+    color: #636363;
+}
+
+h2 {
+    color: #525252;
+}
 
 #ciph-browser {
     margin: 20px auto;
@@ -17,10 +24,6 @@ img {
     max-width: 900px;
     padding: 0 5px;
     clear: both;
-}
-
-#ciph-browser h1 {
-    color: #c2c2c2;
 }
 
 #ciph-logo {
