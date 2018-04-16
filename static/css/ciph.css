@@ -3,6 +3,7 @@ body {
     background-color: black;
     font-family: arial;
     font-size: 125%;
+    line-height: 125%;
 }
 
 img {
@@ -10,20 +11,25 @@ img {
     border: 0;
 }
 
-h1 {
-    color: #636363;
-}
-
-h2 {
-    color: #525252;
+h1, h2, h3 {
+    color: #B50000;
 }
 
 #ciph-browser {
     margin: 20px auto;
     width: 100%;
-    max-width: 900px;
+    max-width: 1000px;
     padding: 0 5px;
     clear: both;
+}
+
+#ciph-browser td {
+    padding: 4px;
+    text-align: center;
+}
+
+#ciph-browser td:first-child {
+    text-align: left;
 }
 
 #ciph-logo {
@@ -39,7 +45,8 @@ h2 {
 }
 
 #ciph-page a {
-    color: #ededed;
+    color: #007F24;
+    text-decoration: none;
 }
 
 #ciph-video {

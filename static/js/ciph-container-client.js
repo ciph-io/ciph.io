@@ -90,19 +90,9 @@ async function decodeHead (data, block) {
     // number of meta blocks uint16 (2 bytes)
     const numMetaBlocks = dataView.getUint16(offset)
     offset += 2
-    // if there are no meta blocks then meta is included in head
-    if (numMetaBlocks === 0) {
-        // get meta data
-        const metaData = data.slice(offset, offset+metaLength)
-        offset += metaLength
-        // decompress meta data
-        const metaUnzipped = pako.ungzip(metaData, { to: 'string' })
-        // parse data
-        this.meta = JSON.parse(metaUnzipped)
-    }
-    else {
-        throw new Error('meta blocks not yet supported')
-    }
+    // get meta data
+    const metaData = data.slice(offset, offset+metaLength)
+    offset += metaLength
     // data length float64 (8 bytes)
     const dataLength = dataView.getFloat64(offset)
     offset += 8
@@ -159,9 +149,17 @@ async function decodeHead (data, block) {
     const decryptedBlockView = new DataView(block, 0, offset+2)
     // calculate digest to verify
     const digest = await crypto.subtle.digest({ name: 'SHA-256' }, decryptedBlockView)
-
     assert(buffersEqual(headDigest, digest), 'head digest verification failed')
-
+    // if there are no meta blocks then meta is included in head
+    if (numMetaBlocks === 0) {
+        // decompress meta data
+        const metaUnzipped = pako.ungzip(metaData, { to: 'string' })
+        // parse data
+        this.meta = JSON.parse(metaUnzipped)
+    }
+    else {
+        throw new Error('meta blocks not yet supported')
+    }
 }
 
 /**
