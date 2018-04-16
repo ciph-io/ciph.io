@@ -56,7 +56,6 @@ CiphContainerClient.prototype = {
     deriveKey,
     get,
     getBlock,
-    getBlockUrl,
     getBlocksForFile,
     getFile,
     getLinkFromUrl,
@@ -341,29 +340,6 @@ async function getBlock (blockSize, blockId0, blockId1) {
 }
 
 /**
- * @function getBlockUrl
- *
- * get url for block
- *
- * @param {string} blockSize
- * @param {string} blockId
- *
- * @returns {string}
- */
-async function getBlockUrl (blockSize, blockId) {
-    // get download url from api
-    const res = await this.get(`/block?size=${blockSize}&id=${blockId}`)
-    // get json response
-    const block = await res.json()
-    // require urls
-    if (!block || !Array.isArray(block.urls) || !block.urls.length) {
-        throw new Error('could not get urls for block')
-    }
-    // TODO: url selection
-    return block.urls[0]
-}
-
-/**
  * @function getBlocksForFile
  *
  * get list of block(s) that contain file.
@@ -499,8 +475,7 @@ function getPage () {
  */
 async function getSubBlock (blockSize, blockId, retry) {
     try {
-        const url = await this.getBlockUrl(blockSize, blockId, retry)
-        const res = await this.get(url)
+        const res = await this.get(`/get?size=${blockSize}&id=${blockId}`)
         const data = await res.arrayBuffer()
 
         return data
