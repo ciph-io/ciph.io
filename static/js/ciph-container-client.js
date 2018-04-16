@@ -48,6 +48,8 @@ function CiphContainerClient (url, options) {
     this.meta = null
     // list of meta blocks if any
     this.metaBlocks = []
+    // proxy host for getting data blocks
+    this.proxyHost = ''
 }
 
 CiphContainerClient.prototype = {
@@ -473,7 +475,7 @@ function getPage () {
  */
 async function getSubBlock (blockSize, blockId, retry) {
     try {
-        const res = await this.get(`/get?size=${blockSize}&id=${blockId}`)
+        const res = await this.get(`${this.proxyHost}/get?size=${blockSize}&id=${blockId}`)
         const data = await res.arrayBuffer()
 
         return data
