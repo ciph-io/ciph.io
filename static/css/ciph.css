@@ -3,7 +3,6 @@ body {
     background-color: black;
     font-family: verdana, arial, sans-serif;
     font-size: 125%;
-    line-height: 125%;
 }
 
 img {
@@ -29,6 +28,10 @@ h3 {
     max-width: 1000px;
     padding: 0 5px;
     clear: both;
+}
+
+#ciph-browser p {
+    line-height: 125%;
 }
 
 #ciph-browser td {

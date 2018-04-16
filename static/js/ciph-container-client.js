@@ -37,11 +37,6 @@ function CiphContainerClient (url, options) {
     this.dataBlocks = []
     // data included in head block if any
     this.dataBuffer = null
-    // head block 
-    this.head = {
-        data: null,
-        promise: this.loadHead(link),
-    }
     // 32 byte hex hash id of head block ids and derived key
     this.id = ''
     // meta data
@@ -50,6 +45,11 @@ function CiphContainerClient (url, options) {
     this.metaBlocks = []
     // proxy host for getting data blocks
     this.proxyHost = ''
+    // head block 
+    this.head = {
+        data: null,
+        promise: this.loadHead(link),
+    }
 }
 
 CiphContainerClient.prototype = {
