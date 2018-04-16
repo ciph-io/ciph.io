@@ -15,8 +15,12 @@ h1 {
     color: #B50000;
 }
 
-h2, h3 {
+h2 {
     color: #007F24;
+}
+
+h3 {
+    color: #7F0000;
 }
 
 #ciph-browser {
