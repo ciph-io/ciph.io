@@ -14,6 +14,7 @@ async function getGet (req, res) {
     const block = await BlockService.getBlock(req.query.size, req.query.id)
 
     if (block && block.urls.length) {
+        res.set('Cache-Control', 'public, max-age=21600')
         res.redirect(block.urls[0])
     }
     else {
