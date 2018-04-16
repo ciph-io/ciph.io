@@ -1,7 +1,7 @@
 body {
     margin: 0;
     background-color: black;
-    font-family: arial;
+    font-family: verdana, arial, sans-serif;
     font-size: 125%;
     line-height: 125%;
 }
@@ -11,8 +11,12 @@ img {
     border: 0;
 }
 
-h1, h2, h3 {
+h1 {
     color: #B50000;
+}
+
+h2, h3 {
+    color: #7F0000;
 }
 
 #ciph-browser {
@@ -45,7 +49,7 @@ h1, h2, h3 {
 }
 
 #ciph-page a {
-    color: #007F24;
+    color: #00CB3A;
     text-decoration: none;
 }
 
