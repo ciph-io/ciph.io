@@ -15,6 +15,7 @@ const errorWrapper = require('./lib/error-wrapper')
 /* route handlers */
 const getBlock = require('./app/get-block')
 const getBlocks = require('./app/get-blocks')
+const getGet = require('./app/get-get')
 const getRandom = require('./app/get-random')
 const getRatingsToken = require('./app/get-ratings-token')
 const getReplace = require('./app/get-replace')
@@ -70,6 +71,7 @@ const upload = multer({
 
 app.get('/block', errorWrapper(getBlock))
 app.get('/blocks', errorWrapper(getBlocks))
+app.get('/get', errorWrapper(getGet))
 app.get('/random', errorWrapper(getRandom))
 app.get('/ratings/token', errorWrapper(getRatingsToken))
 app.get('/replace', errorWrapper(getReplace))
