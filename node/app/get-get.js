@@ -8,10 +8,11 @@ const assert = require('../lib/assert')
 module.exports = getGet
 
 async function getGet (req, res) {
-    assert(req.query.id, 'id required')
-    assert(req.query.size, 'size required')
+    let id = req.params.id
+    id = id.substr(0, id.length - 5)
+    const size = req.params.size
 
-    const block = await BlockService.getBlock(req.query.size, req.query.id)
+    const block = await BlockService.getBlock(size, id)
 
     if (block && block.urls.length) {
         res.set('Cache-Control', 'public, max-age=21600')

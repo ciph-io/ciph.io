@@ -71,7 +71,7 @@ const upload = multer({
 
 app.get('/block', errorWrapper(getBlock))
 app.get('/blocks', errorWrapper(getBlocks))
-app.get('/get', errorWrapper(getGet))
+app.get('/get/:size/:id', errorWrapper(getGet))
 app.get('/random', errorWrapper(getRandom))
 app.get('/ratings/token', errorWrapper(getRatingsToken))
 app.get('/replace', errorWrapper(getReplace))

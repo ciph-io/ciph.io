@@ -475,7 +475,7 @@ function getPage () {
  */
 async function getSubBlock (blockSize, blockId, retry) {
     try {
-        const res = await this.get(`${this.proxyHost}/get?size=${blockSize}&id=${blockId}`)
+        const res = await this.get(`${this.proxyHost}/get/${blockSize}/${blockId}.ciph`)
         const data = await res.arrayBuffer()
 
         return data
