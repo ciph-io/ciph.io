@@ -1,0 +1,50 @@
+#!/usr/bin/env node
+
+'use strict'
+
+/* native modules */
+const path = require('path')
+
+/* npm modules */
+const fs = require('fs-extra')
+
+/* initialize process.env */
+require('../lib/config')
+
+/* app modules */
+const BlockService = require('../lib/block-service')
+const RedisService = require('../lib/redis-service')
+
+/* globals */
+const blockSizes = BlockService.getBlockSizes()
+const hexChars = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f']
+
+initCache().catch(console.error).then(async () => {
+    await RedisService.quit()
+})
+
+async function initCache () {
+    // make sure cache dir exists
+    await fs.ensureDir(process.env.CACHE_PATH)
+    // make sure temp dir exists
+    await fs.ensureDir(process.env.CACHE_TMP_PATH)
+    // create file that will be used for setting times
+    await fs.writeFile(process.env.CACHE_TIME_FILE_PATH, '1')
+    await fs.utimes(process.env.CACHE_TIME_FILE_PATH, 946684799, 946684799)
+    // create segment dirs
+    for (const a of hexChars) {
+        for (const b of hexChars) {
+            for (const c of hexChars) {
+                const cachePath = `${process.env.CACHE_PATH}/${a}${b}${c}`
+                // make sure cache segment dir exists
+                await fs.ensureDir(cachePath)
+                // create directories for each size
+                for (let i=0; i < blockSizes.length; i++) {
+                    const sizePath = `${cachePath}/${i}`
+                    // make sure size directory exists
+                    await fs.ensureDir(sizePath)
+                }
+            }
+        }
+    }
+}
