@@ -44,7 +44,7 @@ function CiphContainerClient (url, options) {
     // list of meta blocks if any
     this.metaBlocks = []
     // proxy host for getting data blocks
-    this.proxyHost = ''
+    this.proxyHost = 'https://proxy-de-1.ciph.io'
     // head block 
     this.head = {
         data: null,
