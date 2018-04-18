@@ -17,5 +17,14 @@
       "PORT": "11001",
       "SERVER_ID": "1"
     }
+  },{
+    "name"        : "data",
+    "script"      : "./app.js",
+    "watch"       : true,
+    "env": {
+      "NODE_ENV": "development",
+      "PORT": "11002",
+      "SERVER_ID": "2"
+    }
   }]
 }

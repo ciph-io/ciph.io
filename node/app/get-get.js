@@ -2,7 +2,6 @@
 
 /* app modules */
 const BlockService = require('../lib/block-service')
-const assert = require('../lib/assert')
 
 /* exports */
 module.exports = getGet

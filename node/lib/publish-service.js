@@ -4,7 +4,6 @@
 const BlockService = require('./block-service')
 const RedisService = require('./redis-service')
 const ServerService = require('./server-service')
-const assert = require('./assert')
 
 /* exports */
 module.exports = class PublishService {

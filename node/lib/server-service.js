@@ -13,6 +13,9 @@ const RedisService = require('./redis-service')
 
 /* globals */
 
+// proxy servers grouped by tier - tier 0 is main server
+const proxyServersByTier = []
+
 const serverTypes = {
     data: {},
     proxy: {},
@@ -49,6 +52,15 @@ for (const server of serverConf) {
         assert(Array.isArray(server.dataDirs), 'invalid dataDirs')
         server.numDataDirs = server.dataDirs.length
     }
+    // if server is proxy server then group by tier
+    if (server.type === 'proxy') {
+        assert(parseInt(server.tier) === server.tier, 'tier required')
+        // create entry for tier if it doesn't exist
+        if (!defined(proxyServersByTier[server.tier])) {
+            proxyServersByTier[server.tier] = []
+        }
+        proxyServersByTier[server.tier].push(server)
+    }
     // group servers by type
     serversByType[server.type].push(server)
     // convert secret to buffer for crypto operations
@@ -83,17 +95,41 @@ module.exports = class ServerService {
     /**
      * @function getProxyServer
      *
-     * get proxy server, sharded by block id, and randomized
+     * get proxy server of appropriate tier or use main server if request
+     * is from a tier 1 proxy server
      *
-     * @param {string} blockId
+     * @param {int|string} tier
      *
      * @returns {Promise<object>}
      */
-    static getProxyServer (blockId) {
-        // get proxy servers for block id
-        const servers = ServerService.getServers('proxy', blockId)
-        // get random server
-        return randomItem(servers)
+    static getProxyServer (tier) {
+        const server = ServerService.getServer()
+        // get integer if tier is passed
+        if (defined(tier)) {
+            tier = parseInt(tier)
+            assert(!Number.isNaN(tier), 'invalid tier')
+        }
+        // if tier is not specified then select based on current server
+        else {
+            // if this is proxy server then get tier above current
+            if (server.type === 'proxy') {
+                tier = server.tier - 1
+            }
+            // otherwise get lowest tier available
+            else {
+                tier = proxyServersByTier.length - 1
+            }
+        }
+        // only get from proxy servers if on a lower tier proxy server
+        if (tier === 0 || server.type !== 'proxy') {
+            return ServerService.getWebServer()
+        }
+        // get random proxy server from correct tier
+        else {
+            assert(Array.isArray(proxyServersByTier[tier]) && proxyServersByTier[tier].length, 'no servers for tier')
+
+            return randomItem(proxyServersByTier[tier])
+        }
     }
 
     /**

@@ -14,10 +14,16 @@ require('../lib/config')
 /* app modules */
 const BlockService = require('../lib/block-service')
 const RedisService = require('../lib/redis-service')
+const ServerService = require('../lib/server-service')
 
 /* globals */
 const blockSizes = BlockService.getBlockSizes()
 const hexChars = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f']
+// current server
+const server = ServerService.getServer()
+assert(server.type === 'proxy', 'must run init-cache on proxy server')
+assert(server.cachePath, 'server cachePath required')
+assert(server.cacheTimeFile, 'server cacheTimeFile required')
 
 initCache().catch(console.error).then(async () => {
     await RedisService.quit()
@@ -25,26 +31,54 @@ initCache().catch(console.error).then(async () => {
 
 async function initCache () {
     // make sure cache dir exists
-    await fs.ensureDir(process.env.CACHE_PATH)
-    // make sure temp dir exists
-    await fs.ensureDir(process.env.CACHE_TMP_PATH)
+    await fs.ensureDir(server.cachePath)
     // create file that will be used for setting times
-    await fs.writeFile(process.env.CACHE_TIME_FILE_PATH, '1')
-    await fs.utimes(process.env.CACHE_TIME_FILE_PATH, 946684799, 946684799)
+    await fs.writeFile(server.cacheTimeFile, '1')
+    await fs.utimes(server.cacheTimeFile, 946684799, 946684799)
     // create segment dirs
     for (const a of hexChars) {
         for (const b of hexChars) {
             for (const c of hexChars) {
-                const cachePath = `${process.env.CACHE_PATH}/${a}${b}${c}`
-                // make sure cache segment dir exists
-                await fs.ensureDir(cachePath)
-                // create directories for each size
-                for (let i=0; i < blockSizes.length; i++) {
-                    const sizePath = `${cachePath}/${i}`
-                    // make sure size directory exists
-                    await fs.ensureDir(sizePath)
+                const cacheDir = `${a}${b}${c}`
+                // spread cache dirs over multiple drives
+                if (server.cacheDirs) {
+                    await createCacheDirLinked(server.cacheDirs, cacheDir)
+                }
+                else {
+                    await createCacheDirDirect(cacheDir)
                 }
             }
         }
     }
+}
+
+async function createCacheDirDirect (cacheDir) {
+    const cachePath = `${server.cachePath}/${cacheDir}`
+    // make sure cache segment dir exists
+    await fs.ensureDir(cachePath)
+    // create directories for each size
+    for (let i=0; i < blockSizes.length; i++) {
+        const sizePath = `${cachePath}/${i}`
+        // make sure size directory exists
+        await fs.ensureDir(sizePath)
+    }
+}
+
+async function createCacheDirLinked (cacheDirs, cacheDir) {
+    // convert hex cache dir name to int
+    const int = parseInt(cacheDir, 16)
+    // split cache dirs
+    const realCachePath = path.resolve(cacheDirs[int%cacheDirs.length], cacheDir)
+    // make sure cache dir exists
+    await fs.ensureDir(realCachePath)
+    // create directories for each size
+    for (let i=0; i < blockSizes.length; i++) {
+        const sizePath = `${realCachePath}/${i}`
+        // make sure size directory exists
+        await fs.ensureDir(sizePath)
+    }
+    // symlink path
+    const linkCachePath = `${server.cachePath}/${cacheDir}`
+    // create symlink to real cache directory
+    await fs.symlink(realCachePath, linkCachePath)
 }
