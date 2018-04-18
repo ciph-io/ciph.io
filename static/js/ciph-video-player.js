@@ -24,7 +24,13 @@ function CiphVideoPlayer (videoElmId, videoUrl, browser) {
 
     this.shaka.addEventListener('error', onErrorEvent)
 
-    // this.shaka.addTextTrack('http://dev.ciph.io/test/eng-31055.vtt', 'eng', 'subtitle', 'text/vtt')
+    this.shaka.configure({
+        streaming: {
+            bufferBehind: 10,
+            bufferingGoal: 30,
+            rebufferingGoal: 10,
+        }
+    });
 
     // wait for head to load
     this.client.head.promise.then(async () => {
