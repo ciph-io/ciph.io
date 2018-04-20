@@ -63,3 +63,10 @@ h3 {
 #ciph-video {
     width: 100%;
 }
+
+#footer {
+    text-align: center;
+    margin-top: 200px;
+    clear: both;
+    color: #c2c2c2;
+}
