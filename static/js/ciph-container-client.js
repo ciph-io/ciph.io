@@ -602,14 +602,14 @@ function setProxyHost () {
     let set = false
 
     for (const proxyHostRegion of proxyHosts) {
-        const proxyHost = randomItem(proxyHostRegion.hosts)
-        fetch(`${proxyHost}${testBlockPath}`, {
+        const newProxyHost = randomItem(proxyHostRegion.hosts)
+        fetch(`${newProxyHost}${testBlockPath}`, {
             cache: 'no-store'
         }).then(res => {
-            proxyHostRegion.time = Date.now()- start
+            proxyHostRegion.time = Date.now() - start
             if (!dev && !set) {
-                console.log(`set proxy host: ${proxyHost}`)
-                proxyHost = proxyHost
+                console.log(`set proxy host: ${newProxyHost}`)
+                proxyHost = newProxyHost
                 set = true
             }
         }).catch(console.error)

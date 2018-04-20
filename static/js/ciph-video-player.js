@@ -26,9 +26,9 @@ function CiphVideoPlayer (videoElmId, videoUrl, browser) {
 
     this.shaka.configure({
         streaming: {
-            bufferBehind: 5,
-            bufferingGoal: 30,
-            rebufferingGoal: 5,
+            bufferBehind: 10,
+            bufferingGoal: 20,
+            rebufferingGoal: 10,
         }
     });
 
