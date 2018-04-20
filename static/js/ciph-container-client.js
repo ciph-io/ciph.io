@@ -26,6 +26,8 @@ const contentTypes = ['collection', 'page', 'video', 'audio', 'image']
 
 const testBlockPath = '/get-proxy/0/5ff536a6d8d90bd3a561cd8440810b90.ciph'
 
+let proxyHost = ''
+
 const proxyHosts = [
     {
         hosts: [
@@ -53,6 +55,8 @@ const proxyHosts = [
     },
 ]
 
+setProxyHost()
+
 /**
  * @function CiphContainerClient
  *
@@ -72,10 +76,6 @@ function CiphContainerClient (url, options) {
     this.meta = null
     // list of meta blocks if any
     this.metaBlocks = []
-    // proxy host for getting data blocks
-    this.proxyHost = ''
-    // set proxy host
-    this.setProxyHost()
     // head block 
     this.head = {
         data: null,
@@ -508,7 +508,7 @@ function getPage () {
  */
 async function getSubBlock (blockSize, blockId, retry) {
     try {
-        const res = await this.get(`${this.proxyHost}/get-proxy/${blockSize}/${blockId}.ciph`)
+        const res = await this.get(`${proxyHost}/get-proxy/${blockSize}/${blockId}.ciph`)
         const data = await res.arrayBuffer()
 
         return data
@@ -589,12 +589,12 @@ function setProxyHost () {
     let dev = false
     // if in dev use dev proxy host
     if (location.host === 'dev.ciph.io') {
-        this.proxyHost = 'https://dev.ciph.io'
+        proxyHost = 'https://dev.ciph.io'
         dev = true
     }
     // otherwise default to random tier 1 proxy
     else {
-        this.proxyHost = randomItem(proxyHosts[0].hosts)
+        proxyHost = randomItem(proxyHosts[0].hosts)
     }
 
     const start = Date.now()
@@ -603,14 +603,16 @@ function setProxyHost () {
 
     for (const proxyHostRegion of proxyHosts) {
         const proxyHost = randomItem(proxyHostRegion.hosts)
-        fetch(`${proxyHost}${testBlockPath}`).then(res => {
+        fetch(`${proxyHost}${testBlockPath}`, {
+            cache: 'no-store'
+        }).then(res => {
             proxyHostRegion.time = Date.now()- start
             if (!dev && !set) {
                 console.log(`set proxy host: ${proxyHost}`)
-                this.proxyHost = proxyHost
+                proxyHost = proxyHost
                 set = true
             }
-        })
+        }).catch(console.error)
     }
 }
 
