@@ -24,6 +24,35 @@ const hash64RegExp = /^[0-9a-f]{64}$/
 const blockSizes = [ 4*KB, 16*KB, 64*KB, 256*KB, 1*MB, 4*MB, 16*MB ]
 const contentTypes = ['collection', 'page', 'video', 'audio', 'image']
 
+const testBlockPath = '/get-proxy/0/5ff536a6d8d90bd3a561cd8440810b90.ciph'
+
+const proxyHosts = [
+    {
+        hosts: [
+            'https://proxy-de-1.ciph.io',
+            'https://proxy-de-2.ciph.io',
+            'https://proxy-de-3.ciph.io',
+            'https://proxy-de-4.ciph.io',
+        ],
+        region: 'de',
+        time: 0,
+    },
+    {
+        hosts: [
+            'https://proxy-usc-1.ciph.io',
+        ],
+        region: 'usc',
+        time: 0,
+    },
+    {
+        hosts: [
+            'https://proxy-usw-1.ciph.io',
+        ],
+        region: 'usw',
+        time: 0,
+    },
+]
+
 /**
  * @function CiphContainerClient
  *
@@ -44,7 +73,9 @@ function CiphContainerClient (url, options) {
     // list of meta blocks if any
     this.metaBlocks = []
     // proxy host for getting data blocks
-    this.proxyHost = 'https://proxy-de-1.ciph.io'
+    this.proxyHost = ''
+    // set proxy host
+    this.setProxyHost()
     // head block 
     this.head = {
         data: null,
@@ -66,6 +97,7 @@ CiphContainerClient.prototype = {
     findFile,
     findFiles,
     loadHead,
+    setProxyHost,
     validate,
 }
 
@@ -382,6 +414,7 @@ function getBlocksForFile (file) {
  * @returns {Promise<ArrayBuffer>}
  */
 async function getFile (fileName) {
+    fileName = decodeURI(fileName)
     // get file data
     const file = this.findFile(fileName)
     assert(file, 'file not found')
@@ -546,6 +579,36 @@ async function loadHead (link) {
 }
 
 /**
+ * @function setProxyHost
+ *
+ * set proxy host, first using default, then setting host based on respose
+ * time from tests hosts in each region
+ *
+ * when optional force param is set the existing setting will be overriden
+ *
+ * @param {boolean} force
+ *
+ */
+function setProxyHost (force) {
+    if (location.host === 'dev.ciph.io') {
+        this.proxyHost = 'https://dev.ciph.io'
+    }
+
+    const start = Date.now()
+
+    for (const proxyHostRegion of proxyHosts) {
+        const proxyHost = randomItem(proxyHostRegion.hosts)
+        fetch(`${proxyHost}${testBlockPath}`).then(res => {
+            proxyHostRegion.time = Date.now()- start
+            if (force || !this.proxyHost.length) {
+                console.log(`set proxy host: ${proxyHost}`)
+                this.proxyHost = proxyHost
+            }
+        })
+    }
+}
+
+/**
  * @function validate
  *
  * fetch all files to validate
@@ -617,6 +680,14 @@ function buffersEqual (bufA, bufB) {
 function defined (val) {
     return val !== undefined
 }
+
+function randomItem (arr) {
+    if (!Array.isArray(arr)) {
+        throw new TypeError('Expected an array');
+    }
+
+    return arr[Math.floor(Math.random() * arr.length)];
+};
 
 /**
  * @function xorBuffer
