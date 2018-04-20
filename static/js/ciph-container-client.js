@@ -584,25 +584,31 @@ async function loadHead (link) {
  * set proxy host, first using default, then setting host based on respose
  * time from tests hosts in each region
  *
- * when optional force param is set the existing setting will be overriden
- *
- * @param {boolean} force
- *
  */
-function setProxyHost (force) {
+function setProxyHost () {
+    let dev = false
+    // if in dev use dev proxy host
     if (location.host === 'dev.ciph.io') {
         this.proxyHost = 'https://dev.ciph.io'
+        dev = true
+    }
+    // otherwise default to random tier 1 proxy
+    else {
+        this.proxyHost = randomItem(proxyHosts[0].hosts)
     }
 
     const start = Date.now()
+
+    let set = false
 
     for (const proxyHostRegion of proxyHosts) {
         const proxyHost = randomItem(proxyHostRegion.hosts)
         fetch(`${proxyHost}${testBlockPath}`).then(res => {
             proxyHostRegion.time = Date.now()- start
-            if (force || !this.proxyHost.length) {
+            if (!dev && !set) {
                 console.log(`set proxy host: ${proxyHost}`)
                 this.proxyHost = proxyHost
+                set = true
             }
         })
     }
