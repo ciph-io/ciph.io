@@ -17,7 +17,7 @@ function CiphPageViewer (pageElmId, link) {
     assert(this.pageElm, 'invalid pageElm')
 
     // wait for head to load
-    this.client.head.promise.then(() => {
+    this.renderPromise = this.client.head.promise.then(() => {
         // do not continue if canceled
         if (this.canceled) return
         // get page markdown

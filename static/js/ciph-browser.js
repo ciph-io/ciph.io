@@ -10,6 +10,13 @@ const contentTypes = ['collection', 'page', 'video', 'audio', 'image']
 
 const linkRegExp = /^\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}/
 
+const scrollOffsets = {}
+
+window.addEventListener('scroll', ev => {
+    // store scroll offset so it can be restored when going back
+    scrollOffsets[location.hash] = window.scrollY
+})
+
 function CiphBrowser (browserElmId) {
     // initialize browser element where html will be rendered
     this.browserElmId = browserElmId
@@ -102,11 +109,17 @@ function renderPage () {
     this.browserElm.innerHTML = `<div id="ciph-page"></div>`
     // create page viewer
     this.active = new CiphPageViewer('ciph-page', this.activeLink, this)
+    // after render restore scroll
+    this.active.renderPromise.then(() => {
+        if (scrollOffsets[location.hash]) {
+            window.scrollTo(0, scrollOffsets[location.hash])
+        }
+    })
 }
 
 function renderVideo () {
     // create video tag
-    this.browserElm.innerHTML = `<video id="ciph-video" controls autoplay></video>`
+    this.browserElm.innerHTML = `<video id="ciph-video" controls></video>`
     // create video player
     this.active = new CiphVideoPlayer('ciph-video', this.activeLink, this)
 }
