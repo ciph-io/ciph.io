@@ -17,6 +17,7 @@ const RedisService = require('./redis-service')
 const proxyServersByTier = []
 
 const serverTypes = {
+    chat: {},
     data: {},
     proxy: {},
     web: {},
