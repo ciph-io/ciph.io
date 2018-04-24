@@ -85,6 +85,10 @@ h3 {
     overflow-y: auto;
 }
 
+#ciph-chat-messages a {
+    color: black;
+}
+
 #ciph-chat-messages .bubble {
     margin: 4px;
     padding: 4px;

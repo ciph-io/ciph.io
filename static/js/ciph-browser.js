@@ -38,16 +38,24 @@ window.CiphBrowser = class CiphBrowser {
         this.render(location.hash)
     }
 
-    open (link) {
+    open (link, ev) {
+        if (ev) {
+            ev.preventDefault()
+        }
         if (link.match(/^ciph:\/\//)) {
             link = '/enter#' + link.replace(/^ciph:\/\//, '')
         }
         history.pushState({}, '', link)
         this.render(link)
+        return false
     }
 
     render (link) {
         link = link.replace(/^.*?#/, '')
+        // do not alert error if no link
+        if (link.length === 0) {
+            return
+        }
         // require valid looking link
         assert(typeof link === 'string' && link.match(linkRegExp), 'invalid link')
         // get content type
