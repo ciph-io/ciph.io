@@ -145,6 +145,9 @@ window.CiphChat = class CiphChat {
         if (location.host === 'dev.ciph.io') {
             return 'wss://dev.ciph.io'
         }
+        else {
+            return 'wss://chat-1.ciph.io'
+        }
     }
 
     hide () {
