@@ -145,6 +145,7 @@ h3 {
 #ciph-user {
     color: #c2c2c2;
     float: left;
+    max-width: 50%;
 }
 
 #ciph-user a {
@@ -159,6 +160,7 @@ h3 {
 #footer {
     text-align: center;
     margin-top: 200px;
+    margin-bottom: 200px;
     clear: both;
     color: #c2c2c2;
 }
