@@ -5,6 +5,20 @@ body {
     font-size: 125%;
 }
 
+button, input, label {
+    font-family: verdana, arial, sans-serif;
+    font-size: 100%;
+    margin: 4px;
+}
+
+input {
+    padding: 4px;
+}
+
+label {
+
+}
+
 img {
     display: block;
     border: 0;
@@ -43,6 +57,74 @@ h3 {
     text-align: left;
 }
 
+#ciph-chat {
+    position: fixed;
+    bottom: 0; right: 0;
+    background-color: white;
+    width: 400px;
+    max-width: 100%;
+    max-height: 100vh;
+}
+
+#ciph-chat-status {
+    padding: 4px;
+    margin-bottom: 4px;
+}
+
+#ciph-chat-input {
+    margin: 4px;
+    text-align: center;
+}
+
+#ciph-chat input {
+    margin: 0;
+    padding: 0;
+}
+
+#ciph-chat-message {
+    width: 100%;
+}
+
+#ciph-chat-messages {
+    border-top: 1px solid black;
+    overflow-y: auto;
+}
+
+#ciph-chat-messages .bubble {
+    margin: 4px;
+    padding: 4px;
+    border: 1px solid blue;
+    border-radius: 4px;
+    width: 80%;
+}
+
+#ciph-chat-messages .bubble.you {
+    margin-left: 15%;
+    border-color: green;
+}
+
+#ciph-chat-messages .bubble.blocked {
+    border-color: red;
+}
+
+#ciph-chat-messages .from {
+    font-size: 80%;
+    font-weight: bold;
+    color: blue;
+}
+
+#ciph-chat-messages .you .from {
+    color: green;
+}
+
+#ciph-chat-messages .blocked .from {
+    color: red;
+}
+
+#ciph-chat-messages .message {
+    word-wrap: break-word;
+}
+
 #ciph-logo {
     float: right;
 }
@@ -60,6 +142,16 @@ h3 {
     text-decoration: none;
 }
 
+#ciph-user {
+    color: #c2c2c2;
+    float: left;
+}
+
+#ciph-user a {
+    cursor: pointer;
+    font-weight: bold;
+}
+
 #ciph-video {
     width: 100%;
 }
@@ -69,4 +161,28 @@ h3 {
     margin-top: 200px;
     clear: both;
     color: #c2c2c2;
+}
+
+#header {
+    padding: 4px;
+}
+
+.ciph-user-form {
+    background-color: black;
+    position: fixed;
+}
+
+.ciph-user-form .notice {
+    max-width: 400px;
+    font-weight: bold;
+    margin: 10px 0;
+    color: #007F24;
+}
+
+.hide {
+    display: none;
+}
+
+.pointer {
+    cursor: pointer;
 }

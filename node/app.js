@@ -21,10 +21,12 @@ const getRandom = require('./app/get-random')
 const getRatingsToken = require('./app/get-ratings-token')
 const getReplace = require('./app/get-replace')
 const getReplaceToken = require('./app/get-replace-token')
+const getUser = require('./app/get-user')
 const postPublishFinish = require('./app/post-publish-finish')
 const postPublishStart = require('./app/post-publish-start')
 const postReplace = require('./app/post-replace')
 const postUpload = require('./app/post-upload')
+const postUser = require('./app/post-user')
 
 /* express configuration */
 
@@ -78,10 +80,12 @@ app.get('/random', errorWrapper(getRandom))
 app.get('/ratings/token', errorWrapper(getRatingsToken))
 app.get('/replace', errorWrapper(getReplace))
 app.get('/replace/token', errorWrapper(getReplaceToken))
+app.get('/user', errorWrapper(getUser))
 app.post('/publish/finish', errorWrapper(postPublishFinish))
 app.post('/publish/start', errorWrapper(postPublishStart))
 app.post('/replace', errorWrapper(postReplace))
 app.post('/upload', upload.single('block'), errorWrapper(postUpload))
+app.post('/user', errorWrapper(postUser))
 
 /* 404 handler */
 

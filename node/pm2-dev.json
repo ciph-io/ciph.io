@@ -18,13 +18,21 @@
       "SERVER_ID": "1"
     }
   },{
-    "name"        : "data",
+    "name"        : "proxy",
     "script"      : "./app.js",
     "watch"       : true,
     "env": {
       "NODE_ENV": "development",
       "PORT": "11002",
       "SERVER_ID": "2"
+    }
+  },{
+    "name"        : "chat",
+    "script"      : "./chat.js",
+    "watch"       : true,
+    "env": {
+      "NODE_ENV": "development",
+      "PORT": "12000",
     }
   }]
 }

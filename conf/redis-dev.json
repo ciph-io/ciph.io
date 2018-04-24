@@ -33,5 +33,34 @@
         "host": "localhost",
         "port": "6379",
         "db": "7"
+    },
+    "users": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "8"
+    },
+    "userCredit": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "9"
+    },
+    "anonCredit": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "10"
+    },
+    "chat": {
+        "host": "localhost",
+        "port": "6379"
+    },
+    "anonBlocks": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "11"
+    },
+    "anonBlockCount": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "12"
     }
 }

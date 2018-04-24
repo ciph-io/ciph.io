@@ -18,20 +18,48 @@
     <script src="/js/markdown-it.min.js"></script>
     <script src="/js/shaka-player.compiled.js"></script>
     <script src="/js/inflate.js"></script>
+    <script src="/js/ciph-util.js"></script>
+
+    <script src="/js/ciph-browser.js"></script>
+    <script src="/js/ciph-chat.js"></script>
     <script src="/js/ciph-container-client.js"></script>
     <script src="/js/ciph-page-viewer.js"></script>
+    <script src="/js/ciph-user.js"></script>
     <script src="/js/ciph-video-player.js"></script>
-    <script src="/js/ciph-browser.js"></script>
 
 </head>
 
 <body>
 
-    <a href="/">
-        <img id="ciph-logo" src="/img/ciph-logo-small.png" alt="ciph logo" />
-    </a>
+    <div id="header">
+        <div id="ciph-user"></div>
+        <a href="/">
+            <img id="ciph-logo" src="/img/ciph-logo-small.png" alt="ciph logo" />
+        </a>
+    </div>
 
     <div id="ciph-browser"></div>
+
+    <div id="ciph-chat" class="expanded">
+        <div id="ciph-chat-status">
+            Chat:
+            <span id="ciph-chat-status-online">Connecting...</span>
+            <span id="ciph-chat-status-messages" class="hide"></span>
+            <a id="ciph-chat-show" class="hide pointer"> - Show</a>
+        </div>
+        <div id="ciph-chat-messages"></div>
+        <div id="ciph-chat-input" class="hide">
+            <form id="ciph-chat-input-form">
+                <input id="ciph-chat-message" type="text" maxlength="256" placeholder="Enter message" autocomplete="off" />
+                <button>Send</button>
+            </form>
+            <div>
+                <a id="ciph-chat-collapse" class="pointer hide">Collapse</a>
+                <a id="ciph-chat-expand" class="pointer">Expand</a>
+                <a id="ciph-chat-hide" class="pointer">Hide</a>
+            </div>
+        </div>
+    </div>
 
     <div id="footer">
         <hr />
@@ -44,7 +72,9 @@
     </div>
 
     <script>
-        window.ciphBrowser = new CiphBrowser('ciph-browser')
+        window.ciphUser = new CiphUser()
+        window.ciphChat = new CiphChat()
+        window.ciphBrowser = new CiphBrowser()
     </script>
 
 </body>

@@ -15,6 +15,8 @@ const redisConf = fs.readJsonSync(process.env.REDIS_CONF_FILE)
 
 // redis client indexed by name
 const clientsByName = {}
+// redis subscriber clients indexed by name
+const subClientsByName = {}
 // redis clients for block dbs indexed by block size
 const blockServerClients = []
 // server id is int/hex
@@ -38,6 +40,83 @@ class RedisService {
     static async createNewBlock (size, id) {
         const res = await RedisService.getBlockServerClient(size).setnx(id, 'U')
         assert(res === 1, 'blockId exists')
+    }
+
+    /**
+     * @function createUser
+     *
+     * create new user. throw error if user exists.
+     *
+     * @param {string} userId
+     * @param {string} secret
+     *
+     * @returns {Promise<undefined>}
+     */
+    static async createUser (userId, secret) {
+        const res = await RedisService.getClient('users').setnx(userId, secret)
+        assert(res === 1, 'userId exists')
+    }
+
+    /**
+     * @function decrAnonBlockCount
+     *
+     * decrement block count for anon id (ip)
+     *
+     * @param {string} anonId
+     *
+     * @returns {Promise<string>}
+     */
+    static async decrAnonBlockCount (anonId) {
+        return RedisService.getClient('anonBlockCount').decr(anonId)
+    }
+
+    /**
+     * @function getAnonBlockCount
+     *
+     * get sum of blocks/unblocks for anon
+     *
+     * @param {string} anonId
+     *
+     * @returns {Promise<string>}
+     */
+    static async getAnonBlockCount (anonId) {
+        const blockCount = parseInt( await RedisService.getClient('anonBlockCount').get(anonId) )
+
+        return blockCount > 0 ? blockCount : 0
+    }
+
+    /**
+     * @function getAnonBlocks
+     *
+     * get anon blocks
+     *
+     * @param {string} anonId
+     * @param {object|string} blocks
+     *
+     * @returns {Promise<undefined>}
+     */
+    static async getAnonBlocks (anonId) {
+        let blocks = await RedisService.getClient('anonBlocks').get(anonId)
+        try {
+            return JSON.parse(blocks)
+        }
+        catch (err) {
+            console.error(err)
+            return {}
+        }
+    }
+
+    /**
+     * @function getAnonCredit
+     *
+     * get anon credit
+     *
+     * @param {string} anonId
+     *
+     * @returns {Promise<integer>}
+     */
+    static async getAnonCredit (anonId) {
+        return RedisService.getClient('anonCredit').get(anonId)
     }
 
     /**
@@ -132,6 +211,88 @@ class RedisService {
     }
 
     /**
+     * @function getUserCredit
+     *
+     * get user credit
+     *
+     * @param {string} userId
+     *
+     * @returns {Promise<integer>}
+     */
+    static async getUserCredit (userId) {
+        return RedisService.getClient('userCredit').get(userId)
+    }
+
+    /**
+     * @function getUserSecret
+     *
+     * get user secret
+     *
+     * @param {string} userId
+     *
+     * @returns {Promise<null|string>}
+     */
+    static async getUserSecret (userId) {
+        return RedisService.getClient('users').get(userId)
+    }
+
+    /**
+     * @function incrAnonBlockCount
+     *
+     * increment block count for anon id (ip)
+     *
+     * @param {string} anonId
+     *
+     * @returns {Promise<string>}
+     */
+    static async incrAnonBlockCount (anonId) {
+        return RedisService.getClient('anonBlockCount').incr(anonId)
+    }
+
+    /**
+     * @function sendChatMessage
+     *
+     * publish data to chat channel
+     */
+    static async sendChatMessage (data) {
+        if (typeof data === 'object') {
+            data = JSON.stringify(data)
+        }
+        return RedisService.getClient('chat').publish('chat', data)
+    }
+
+    /**
+     * @function setAnonCredit
+     *
+     * set anon credit
+     *
+     * @param {string} anonId
+     * @param {number|string} credit
+     *
+     * @returns {Promise<integer>}
+     */
+    static async setAnonCredit (anonId, credit) {
+        return RedisService.getClient('anonCredit').set(anonId, credit)
+    }
+
+    /**
+     * @function setAnonBlocks
+     *
+     * set anon blocks
+     *
+     * @param {string} anonId
+     * @param {object|string} blocks
+     *
+     * @returns {Promise<undefined>}
+     */
+    static async setAnonBlocks (anonId, blocks) {
+        if (typeof blocks === 'object') {
+            blocks = JSON.stringify(blocks)
+        }
+        return RedisService.getClient('anonBlocks').set(anonId, blocks)
+    }
+
+    /**
      * @function setServers
      *
      * set list of server ids for block id.
@@ -165,6 +326,11 @@ class RedisService {
         return clientsByName[name]
     }
 
+    static getSubClient (name) {
+        assert(defined(subClientsByName[name]), 'invalid sub client name')
+        return subClientsByName[name]
+    }
+
     static getBlockServerClient (size) {
         assert(defined(blockServerClients[size]), 'invalid client block size')
         return blockServerClients[size]
@@ -175,8 +341,13 @@ class RedisService {
         clientsByName[name] = new IORedis(conf)
         // log errors
         clientsByName[name].on('error', console.error)
-
-        return clientsByName[name]
+        // also create subscriber connections for chat clients
+        if (name.match(/^chat/)) {
+            // create sub client
+            subClientsByName[name] = new IORedis(conf)
+            // log errors
+            subClientsByName[name].on('error', console.error)
+        }
     }
 
     static async quit () {
@@ -200,15 +371,7 @@ if (!defined(process.env.NO_REDIS)) {
         assert(defined(clientsByName[`blockServers${size}`]), `redis block server ${size} not defined`)
         blockServerClients[size] = clientsByName[`blockServers${size}`]
     }
-
-    // client for storing ratings
-    // RedisService.newClient('ratings')
-    // client for storing block replace ids
-    // RedisService.newClient('replace')
-    // client for storing replace tokens
-    // RedisService.newClient('replaceToken')
 }
-
 
 /* exports */
 

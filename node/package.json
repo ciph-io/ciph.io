@@ -2,8 +2,9 @@
   "author": "Ersun Warncke <ersun.warncke@protonmail.com>",
   "dependencies": {
     "bluebird": "3.5.1",
+    "bytes": "3.0.0",
     "change-case": "3.0.2",
-    "deep-freeze-strict": "^1.1.1",
+    "deep-freeze-strict": "1.1.1",
     "express": "4.16.2",
     "fs-extra": "5.0.0",
     "get-env": "0.5.10",
@@ -14,9 +15,10 @@
     "mz": "2.7.0",
     "random-int": "1.0.0",
     "random-item": "1.0.0",
-    "request": "^2.85.0",
-    "request-promise": "^4.2.2",
-    "touch": "3.1.0"
+    "request": "2.85.0",
+    "request-promise": "4.2.2",
+    "touch": "3.1.0",
+    "ws": "^5.1.1"
   },
   "description": "ciph server",
   "devDependencies": {
