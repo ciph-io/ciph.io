@@ -93,16 +93,21 @@ class RedisService {
      * @param {string} anonId
      * @param {object|string} blocks
      *
-     * @returns {Promise<undefined>}
+     * @returns {Promise<object>}
      */
     static async getAnonBlocks (anonId) {
         let blocks = await RedisService.getClient('anonBlocks').get(anonId)
-        try {
-            return JSON.parse(blocks)
-        }
-        catch (err) {
-            console.error(err)
+        if (blocks === null) {
             return {}
+        }
+        else {
+            try {
+                return JSON.parse(blocks)
+            }
+            catch (err) {
+                console.error(err)
+                return {}
+            }
         }
     }
 
