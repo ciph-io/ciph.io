@@ -89,7 +89,7 @@ window.CiphChat = class CiphChat {
         elm.setAttribute('id', message.id)
         elm.classList.add('bubble')
         // our own message
-        if (false && message.anonId === this.user.data.anonId) {
+        if (message.anonId === this.user.data.anonId) {
             elm.classList.add('you')
             elm.innerHTML = `
                 <div class="from">You</div>
