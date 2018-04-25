@@ -461,8 +461,8 @@ window.CiphContainerClient = class CiphContainerClient {
         else {
             // retry on error
             if (!retry) {
-                // force refresh token if access denied
-                if (res.status === 403) {
+                // force refresh token if authorization failed
+                if (res.status === 401) {
                     await this.user.refresh(true)
                 }
                 // retry
