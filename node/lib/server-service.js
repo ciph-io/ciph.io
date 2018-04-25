@@ -94,6 +94,18 @@ module.exports = class ServerService {
     }
 
     /**
+     * @function getDownloadKey
+     *
+     * download key is a static shared secret used for internal requests between
+     * proxy and data servers
+     *
+     * @returns {string}
+     */
+    static getDownloadKey () {
+        return ServerService.getServerById(0).downloadKey
+    }
+
+    /**
      * @function getDownloadToken
      *
      * create download token that is hmac calculated from server secret and

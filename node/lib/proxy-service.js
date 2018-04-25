@@ -61,7 +61,7 @@ module.exports = class ProxyService {
 
         const getPath = proxyServer.type === 'proxy' ? 'get-proxy' : 'get'
 
-        return `${proxyServer.url}/${getPath}/${size}/${blockId}.ciph`
+        return `${proxyServer.url}/${getPath}/${size}/${blockId}.ciph?key=${ServerService.getDownloadKey()}`
     }
 
     /**
