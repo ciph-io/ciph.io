@@ -99,13 +99,13 @@ module.exports = class UserService {
             // get expiration in seconds + 5 minutes
             user.token.expires = Math.floor(Date.now() / 1000) + (60*5)
             // create token with either user or anon id and expiration time
-            if (userId) {
+            if (user.userId) {
                 user.token.type = 'user'
-                user.token.value = ServerService.getServerSignature(userId+user.token.expires, 0)
+                user.token.value = ServerService.getDownloadToken(user.userId+user.token.expires)
             }
             else {
                 user.token.type = 'anon'
-                user.token.value = ServerService.getServerSignature(anonId+user.token.expires, 0)
+                user.token.value = ServerService.getDownloadToken(user.anonId+user.token.expires)
             }
         }
 

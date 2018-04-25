@@ -48,7 +48,7 @@ setProxyHost()
 /* exports */
 window.CiphContainerClient = class CiphContainerClient {
 
-    constructor (url, options) {
+    constructor (url, options = {}) {
         const link = this.getLinkFromUrl(url)
         // encryption key for chat messages
         this.chatKeyBuffer = null
@@ -62,6 +62,8 @@ window.CiphContainerClient = class CiphContainerClient {
         this.meta = null
         // list of meta blocks if any
         this.metaBlocks = []
+        // ciph user
+        this.user = options.user || window.ciphUser
         // head block 
         this.head = {
             data: null,
@@ -199,36 +201,6 @@ window.CiphContainerClient = class CiphContainerClient {
     }
 
     /**
-     * @function get
-     *
-     * do fetch
-     *
-     * @returns Promise<object>
-     */
-    async get (url, options = {}) {
-        if (!defined(options.credentials))
-            options.credentials = 'omit'
-
-        const res = await fetch(url, options)
-
-        if (res.ok) return res
-
-        let message = res.statusText
-        // try to get error from response
-        if (res.status === 400) {
-            try {
-                const json = await res.json()
-                if (json.error) {
-                    message = json.error
-                }
-            }
-            catch (err) {}
-        }
-
-        throw new Error(message)
-    }
-
-    /**
      * @function findFile
      *
      * search for file by string name or regular expression
@@ -280,6 +252,37 @@ window.CiphContainerClient = class CiphContainerClient {
         }
 
         return found
+    }
+
+
+    /**
+     * @function get
+     *
+     * do fetch
+     *
+     * @returns Promise<object>
+     */
+    async get (url, options = {}) {
+        if (!defined(options.credentials))
+            options.credentials = 'omit'
+
+        const res = await fetch(url, options)
+
+        if (res.ok) return res
+
+        let message = res.statusText
+        // try to get error from response
+        if (res.status === 400) {
+            try {
+                const json = await res.json()
+                if (json.error) {
+                    message = json.error
+                }
+            }
+            catch (err) {}
+        }
+
+        throw new Error(message)
     }
 
     /**
@@ -438,16 +441,37 @@ window.CiphContainerClient = class CiphContainerClient {
      * @returns {Promise<ArrayBuffer>}
      */
     async getSubBlock (blockSize, blockId, retry) {
-        try {
-            const res = await this.get(`${proxyHost}/get-proxy/${blockSize}/${blockId}.ciph`)
-            const data = await res.arrayBuffer()
-
-            return data
+        // require user
+        assert(this.user, 'ciph user required')
+        // if user is loading must wait
+        if (this.user.promise) {
+            await this.user.promise
         }
-        catch (err) {
-            console.error(err)
-            // TODO: retry
-            throw err
+        // get values for authentication
+        const id = this.user.data.token.type === 'anon' ? this.user.data.anonId : this.user.data.userId
+        const expires = this.user.data.token.expires
+        const token = this.user.data.token.value
+        // request block
+        const res = await fetch(`${proxyHost}/get-proxy/${blockSize}/${blockId}.ciph?id=${id}&expires=${expires}&token=${encodeURIComponent(token)}`)
+        // return data if success
+        if (res.ok) {
+            return res.arrayBuffer()
+        }
+        // handle errors
+        else {
+            // retry on error
+            if (!retry) {
+                // force refresh token if access denied
+                if (res.status === 403) {
+                    await this.user.refresh(true)
+                }
+                // retry
+                return this.getSubBlock(blockSize, blockId, true)
+            }
+            // otherwise throw error
+            else {
+                throw new Error(res.statusText)
+            }
         }
     }
 

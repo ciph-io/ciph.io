@@ -11,6 +11,8 @@ window.CiphUser = class CiphUser {
         this.localStorageKey = args.localStorageKey || 'ciph-user'
         // user data
         this.data = null
+        // promise set when loading
+        this.promise = null
         // load user from local storage
         try {
             let userData = localStorage.getItem(this.localStorageKey)
@@ -22,7 +24,7 @@ window.CiphUser = class CiphUser {
             console.error(err)
         }
         // load user then render
-        this.promise = this.getUser().catch(console.error)
+        this.refresh()
     }
 
     async deriveUserIdAndSecret (username, password) {
@@ -41,9 +43,9 @@ window.CiphUser = class CiphUser {
         }
     }
 
-    async getUser () {
+    async getUser (force) {
         // if there is stored token and it is not expired then do not request
-        if (this.data && this.data.token) {
+        if (this.data && this.data.token && !force) {
             // get current time incluing offset between server and browser
             const currentTime = Math.floor(Date.now() / 1000) - this.data.token.offset
             // if current time is still 30 seconds before token expiration
@@ -58,9 +60,9 @@ window.CiphUser = class CiphUser {
         if (this.data) {
             headers['x-secret'] = this.data.secret
         }
-        const url = this.data ? `/user?userId=${this.data.userId}` : '/user'
+        const url = this.data && this.data.userId ? `/user?userId=${this.data.userId}` : '/user'
         // make request for user info
-        let res = await fetch(url, {
+        const res = await fetch(url, {
             credentials: 'omit',
             headers: headers,
             method: 'GET',
@@ -103,6 +105,19 @@ window.CiphUser = class CiphUser {
     logout () {
         this.data = null
         this.getUser()
+    }
+
+    async refresh (force) {
+        // if request in progress then use result from the request
+        if (this.promise) {
+            return this.promise
+        }
+        // request user - store promise while loading
+        this.promise = this.getUser(force).catch(console.error)
+        // wait for request to complete
+        await this.promise
+        // clear promise when done loading
+        this.promise = null
     }
 
     async register () {

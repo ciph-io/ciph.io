@@ -7,11 +7,11 @@ const request = require('request')
 const ProxyService = require('../lib/proxy-service')
 
 /* exports */
-module.exports = getGetProxy
+module.exports = getGetProxyNode
 
 const pathRegExp = /\/(\d+)\/([a-z0-9]{32})\.ciph$/
 
-async function getGetProxy (req, res) {
+async function getGetProxyNode (req, res) {
     assert(req.query.path, 'path required')
     // extract size and id from path
     const [, size, blockId] = req.query.path.match(pathRegExp)

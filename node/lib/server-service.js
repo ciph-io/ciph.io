@@ -94,6 +94,28 @@ module.exports = class ServerService {
     }
 
     /**
+     * @function getDownloadToken
+     *
+     * create download token that is hmac calculated from server secret and
+     * the id + expiration time value.
+     *
+     * using sha1/base64 for compatibility with native nginx/lua libraries.
+     *
+     * @param {string} val
+     *
+     * @returns {string}
+     */
+    static getDownloadToken (val) {
+        const server = ServerService.getServerById(0)
+        // create hmac to sign data
+        const hmac = crypto.createHmac('sha1', server.secret)
+        // sign data
+        hmac.update(val)
+        // create signature
+        return hmac.digest('base64')
+    }
+
+    /**
      * @function getProxyServer
      *
      * get proxy server of appropriate tier or use main server if request
