@@ -35,6 +35,20 @@ h3 {
     color: #7F0000;
 }
 
+#unsupported-browser {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100%; width: 100%;
+    overflow: auto;
+    background-color: white;
+    z-index: 999;
+}
+
+#unsupported-browser div {
+    margin: 25px auto;
+    max-width: 800px;
+}
+
 #ciph-browser {
     margin: 20px auto;
     width: 100%;
