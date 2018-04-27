@@ -455,13 +455,10 @@ window.CiphContainerClient = class CiphContainerClient {
         const res = await fetch(`${proxyHost}/get-proxy/${blockSize}/${blockId}.ciph`, {
             credentials: 'omit',
             headers: {
-                'Cache-Control': 'public',
-                'Pragma': '',
                 'x-ciph-expires': expires,
                 'x-ciph-id': id,
                 'x-ciph-token': token,
             },
-            referrer: '/',
         })
         // return data if success
         if (res.ok) {
