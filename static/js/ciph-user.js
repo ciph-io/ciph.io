@@ -25,6 +25,10 @@ window.CiphUser = class CiphUser {
         }
         // load user then render
         this.refresh()
+        // refresh user every 60 seconds
+        setInterval(() => {
+            this.refresh(true)
+        }, 60*1000)
     }
 
     async deriveUserIdAndSecret (username, password) {

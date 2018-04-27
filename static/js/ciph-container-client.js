@@ -452,7 +452,17 @@ window.CiphContainerClient = class CiphContainerClient {
         const expires = this.user.data.token.expires
         const token = this.user.data.token.value
         // request block
-        const res = await fetch(`${proxyHost}/get-proxy/${blockSize}/${blockId}.ciph?id=${id}&expires=${expires}&token=${encodeURIComponent(token)}`)
+        const res = await fetch(`${proxyHost}/get-proxy/${blockSize}/${blockId}.ciph`, {
+            credentials: 'omit',
+            headers: {
+                'Cache-Control': 'public',
+                'Pragma': '',
+                'x-ciph-expires': expires,
+                'x-ciph-id': id,
+                'x-ciph-token': token,
+            },
+            referrer: '/',
+        })
         // return data if success
         if (res.ok) {
             return res.arrayBuffer()

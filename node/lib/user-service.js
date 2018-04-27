@@ -96,8 +96,8 @@ module.exports = class UserService {
             user.token = {}
             // set time
             user.token.time = Math.floor(Date.now() / 1000)
-            // get expiration in seconds + 5 minutes
-            user.token.expires = Math.floor(Date.now() / 1000) + (60*5)
+            // set token to expire in 90 seconds - clients should refresh every 60
+            user.token.expires = Math.floor(Date.now() / 1000) + 90
             // create token with either user or anon id and expiration time
             if (user.userId) {
                 user.token.type = 'user'
