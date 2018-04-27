@@ -89,7 +89,8 @@ module.exports = class UserService {
             }
         }
         // get credit for both anon (ip) and user if logged in
-        user.credit = await UserService.getUserCredit(anonId, userId)
+        const userCredit = await UserService.getUserCredit(anonId, userId)
+        user.credit = userCredit.anonCredit + userCredit.userCredit
         user.displayCredit = bytes.format(user.credit)
         // if user has positive balance then create signed token for download
         if (user.credit > 0) {
@@ -98,11 +99,12 @@ module.exports = class UserService {
             user.token.time = Math.floor(Date.now() / 1000)
             // set token to expire in 90 seconds - clients should refresh every 60
             user.token.expires = Math.floor(Date.now() / 1000) + 90
-            // create token with either user or anon id and expiration time
-            if (user.userId) {
+            // if user has credit create token for user id
+            if (userCredit.userCredit > 0) {
                 user.token.type = 'user'
                 user.token.value = ServerService.getDownloadToken(user.userId+user.token.expires)
             }
+            // otherwise use anon credit
             else {
                 user.token.type = 'anon'
                 user.token.value = ServerService.getDownloadToken(user.anonId+user.token.expires)
@@ -120,10 +122,13 @@ module.exports = class UserService {
      * @param {string} anonId
      * @param {string} userId
      *
-     * @returns {Promise<integer>}
+     * @returns {Promise<object>}
      */
     static async getUserCredit (anonId, userId) {
-        let credit = 0
+        const credit = {
+            anonCredit: 0,
+            userCredit: 0,
+        }
         // if user id is provided get user credit
         const userCreditPromise = userId
             ? RedisService.getUserCredit(userId)
@@ -137,12 +142,12 @@ module.exports = class UserService {
             RedisService.setAnonCredit(anonCredit).catch(console.error)
         }
         // add anon credit to credit balance
-        credit += parseInt(anonCredit)
+        credit.anonCredit = parseInt(anonCredit)
         // if user credit fetched add it
         if (userCreditPromise) {
-            const userCredit = await userCreditPromise
+            const userCredit = parseInt(await userCreditPromise)
             if (userCredit) {
-                credit += parseInt(userCredit)
+                credit.userCredit = userCredit
             }
         }
         // return combined credit balance
