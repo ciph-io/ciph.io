@@ -450,14 +450,14 @@ window.CiphContainerClient = class CiphContainerClient {
         // get values for authentication
         const id = this.user.data.token.type === 'anon' ? this.user.data.anonId : this.user.data.userId
         const expires = this.user.data.token.expires
-        const token = this.user.data.token.value
+        const token = encodeURIComponent(this.user.data.token.value)
         // request block
         const res = await fetch(`${proxyHost}/get-proxy/${blockSize}/${blockId}.ciph`, {
             credentials: 'omit',
             headers: {
-                'x-ciph-expires': expires,
-                'x-ciph-id': id,
-                'x-ciph-token': token,
+                'Accept': id,
+                'Accept-Language': token,
+                'Content-Language': expires,
             },
         })
         // return data if success
@@ -570,7 +570,7 @@ function setProxyHost () {
     let dev = false
     // if in dev use dev proxy host
     if (location.host === 'dev.ciph.io') {
-        proxyHost = 'https://dev.ciph.io'
+        proxyHost = 'https://proxy-dev-1.ciph.io'
         dev = true
     }
     // otherwise default to random tier 1 proxy
