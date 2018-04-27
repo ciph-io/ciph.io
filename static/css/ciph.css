@@ -178,6 +178,10 @@ h3 {
     color: #c2c2c2;
 }
 
+#footer img {
+    margin: 20px auto;
+}
+
 #header {
     padding: 4px;
 }
