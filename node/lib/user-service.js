@@ -3,6 +3,7 @@
 /* npm modules */
 const bytes = require('bytes')
 const crypto = require('mz/crypto')
+const request = require('request-promise')
 
 /* app modules */
 const RedisService = require('./redis-service')
@@ -152,6 +153,38 @@ module.exports = class UserService {
         }
         // return combined credit balance
         return credit
+    }
+
+    /**
+     * @function getUserEpycly
+     *
+     * get epycly sessionId for cdn payment
+     *
+     * @param {string} userId
+     * @param {string} secret
+     *
+     * @returns {Promise<object>}
+     */
+    static async getUserEpycly (userId, secret) {
+        assert(UserService.isValidUserId(userId), 'invalid userId')
+        assert(UserService.isValidSecret(secret), 'invalid secret')
+        // validate secret
+        const storedSecret = await RedisService.getUserSecret(userId)
+        assert(storedSecret === secret, 'invalid secret')
+        // get session id from epycly
+        const res = await request({
+            body: {
+                secret: process.env.EPYCLY_SECRET,
+                source: 'ciph',
+                userId: userId,
+            },
+            json: true,
+            method: 'POST',
+            uri: `${process.env.EPYCLY_HOST}/cloud/connect`,
+        })
+        assert(res && res.sessionId, 'invalid response')
+
+        return { sessionId: res.sessionId }
     }
 
     static isValidUserId (userId) {

@@ -12,6 +12,8 @@ global.assert = require('./assert')
 global.defined = require('if-defined')
 
 setConfigDefault('API_HOST', 'https://dev.ciph.io')
+setConfigDefault('EPYCLY_HOST', 'http://dev.epycly.com')
+setConfigDefault('EPYCLY_SECRET', 'hiereePheiSh1Ho0gunguthuabaiThae4jahNg8exaish4nieng3Xae8Quui5aeb')
 setConfigDefault('HOST', 'dev.ciph.io')
 setConfigDefault('PORT', '11000')
 setConfigDefault('PROD', getEnv() === 'prod')

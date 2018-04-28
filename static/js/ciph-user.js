@@ -1,5 +1,8 @@
 (function () {
 
+/* globals */
+const epyclyHost = location.host === 'dev.ciph.io' ? 'http://dev.epycly.com' : 'https://epycly.com'
+
 /* exports */
 window.CiphUser = class CiphUser {
 
@@ -27,7 +30,10 @@ window.CiphUser = class CiphUser {
         this.refresh()
         // refresh user every 60 seconds
         setInterval(() => {
-            this.refresh(true)
+            // do not refresh if already in progress
+            if (!this.promise) {
+                this.refresh(true)
+            }
         }, 60*1000)
     }
 
@@ -69,7 +75,6 @@ window.CiphUser = class CiphUser {
         const res = await fetch(url, {
             credentials: 'omit',
             headers: headers,
-            method: 'GET',
         })
 
         if (res.status === 200) {
@@ -103,7 +108,7 @@ window.CiphUser = class CiphUser {
         // store user info
         this.data = user
         // load user data
-        return this.getUser()
+        return this.refresh(true)
     }
 
     logout () {
@@ -120,6 +125,33 @@ window.CiphUser = class CiphUser {
         this.promise = this.getUser(force).catch(console.error)
         // wait for request to complete
         await this.promise
+        // show alert if no credit
+        if (this.data.credit <= 0) {
+            // if user is logged in then show modal to buy credit
+            if (this.data.userId) {
+                if (confirm('You have no credit remaining. Click OK to buy more credit now. You will be redirected to our CDN provider Epycly to complete your purchase.')) {
+                    let res = await fetch(`/user/epycly?userId=${this.data.userId}`, {
+                        credentials: 'omit',
+                        headers: {'x-secret': this.data.secret},
+                    })
+                    res = await res.json()
+                    if (res.sessionId) {
+                        // clear token so user will be reloaded on return
+                        this.data.token = undefined
+                        this.store()
+                        // go to purcahse page
+                        window.location = `${epyclyHost}/cloud/cdn-credit?sessionId=${res.sessionId}`
+                    }
+                    else {
+                        alert('An error occurred')
+                    }
+                }
+            }
+            // if user is not logged in then must login/register first
+            else {
+                alert('You have no credit remaining. To buy credit you must login or register first. Your free 10GB credit refreshes every month.')
+            }
+        }
         // clear promise when done loading
         this.promise = null
     }
