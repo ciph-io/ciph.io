@@ -37,6 +37,30 @@ window.CiphUser = class CiphUser {
         }, 60*1000)
     }
 
+    async addCredit () {
+        let message = 'Click OK to buy more credit now. You will be redirected to our CDN provider Epycly to complete your purchase.'
+        if (this.data.credit <= 0) {
+            message = 'You have no credit remaining. ' + message
+        }
+        if (confirm(message)) {
+            let res = await fetch(`/user/epycly?userId=${this.data.userId}`, {
+                credentials: 'omit',
+                headers: {'x-secret': this.data.secret},
+            })
+            res = await res.json()
+            if (res.sessionId) {
+                // clear token so user will be reloaded on return
+                this.data.token = undefined
+                this.store()
+                // go to purcahse page
+                window.location = `${epyclyHost}/cloud/cdn-credit?sessionId=${res.sessionId}`
+            }
+            else {
+                alert('An error occurred')
+            }
+        }
+    }
+
     async deriveUserIdAndSecret (username, password) {
         // get userid from username and password using PBKDF
         const userIdKey = await CiphUtil.deriveKey(
@@ -129,23 +153,7 @@ window.CiphUser = class CiphUser {
         if (this.data.credit <= 0) {
             // if user is logged in then show modal to buy credit
             if (this.data.userId) {
-                if (confirm('You have no credit remaining. Click OK to buy more credit now. You will be redirected to our CDN provider Epycly to complete your purchase.')) {
-                    let res = await fetch(`/user/epycly?userId=${this.data.userId}`, {
-                        credentials: 'omit',
-                        headers: {'x-secret': this.data.secret},
-                    })
-                    res = await res.json()
-                    if (res.sessionId) {
-                        // clear token so user will be reloaded on return
-                        this.data.token = undefined
-                        this.store()
-                        // go to purcahse page
-                        window.location = `${epyclyHost}/cloud/cdn-credit?sessionId=${res.sessionId}`
-                    }
-                    else {
-                        alert('An error occurred')
-                    }
-                }
+                await this.addCredit()
             }
             // if user is not logged in then must login/register first
             else {
@@ -236,7 +244,7 @@ window.CiphUser = class CiphUser {
     renderLoggedIn () {
         this.elm.innerHTML = `
             Logged in as: ${this.data.displayUserId}@${this.data.anonId},
-            ${this.data.displayCredit} Credit,
+            <a onclick="ciphUser.addCredit()">${this.data.displayCredit} Credit<span style="color: #00CB3A">+</span></a>,
             <a id="ciph-logout">Logout</a>
         `
         el('ciph-logout').addEventListener('click', () => this.logout())
