@@ -31,6 +31,8 @@ window.CiphBrowser = class CiphBrowser {
         this.active = null
         this.activeContentType = ''
         this.activeLink = ''
+        // local storage key for last link access
+        this.lastLocalStorageKey = args.lastLocalStorageKey || 'ciph-last'
         // set user and chat client
         this.chat = args.chat || window.ciphChat
         this.user = args.user || window.ciphUser
@@ -52,9 +54,16 @@ window.CiphBrowser = class CiphBrowser {
 
     render (link) {
         link = link.replace(/^.*?#/, '')
-        // do not alert error if no link
+        // if there is no link then go to last link if set
         if (link.length === 0) {
-            return
+            link = localStorage.getItem(this.lastLocalStorageKey)
+            // if link is loaded then must add to history
+            if (link) {
+                history.pushState({}, '', `/enter#${link}`)
+            }
+            else {
+                return
+            }
         }
         // require valid looking link
         assert(typeof link === 'string' && link.match(linkRegExp), 'invalid link')
@@ -67,6 +76,8 @@ window.CiphBrowser = class CiphBrowser {
         // set active content type
         this.activeContentType = contentType
         this.activeLink = link
+        // store last access link
+        localStorage.setItem(this.lastLocalStorageKey, this.activeLink)
         // render content type
         switch (contentType) {
             case 'collection':
@@ -109,7 +120,7 @@ window.CiphBrowser = class CiphBrowser {
 
     renderVideo () {
         // create video tag
-        this.elm.innerHTML = `<video id="ciph-video" controls autoplay></video>`
+        this.elm.innerHTML = `<video id="ciph-video" controls></video>`
         // create video player
         this.active = new CiphVideoPlayer('ciph-video', this.activeLink, this)
     }

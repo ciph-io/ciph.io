@@ -25,7 +25,7 @@ window.CiphPageViewer = class CiphPageViewer {
             this.markdown = this.client.getPage()
             // render page html to element
             this.render()
-        })
+        }).catch(console.error)
     }
 
     cancel () {

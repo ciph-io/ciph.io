@@ -11,6 +11,10 @@ window.CiphVideoPlayer = class CiphVideoPlayer {
         this.videoElmId = videoElmId
         this.videoElm = document.getElementById(this.videoElmId)
 
+        // local storage key for storing playback status - set with unique id
+        // after head loads
+        this.statusLocalStorageKey = ''
+
         assert(window.shaka, 'shaka player not loaded')
         assert(this.videoElm, 'invalid videoElmId')
 
@@ -35,6 +39,8 @@ window.CiphVideoPlayer = class CiphVideoPlayer {
 
         // wait for head to load
         this.client.head.promise.then(async () => {
+            // local storage key for playback status
+            this.statusLocalStorageKey = `${this.client.publicId}-status`
             // get mpeg dash index file
             const mpd = this.client.findFile(/\.mpd$/)
             assert(mpd, 'mpeg-dash index file not found')
@@ -50,9 +56,43 @@ window.CiphVideoPlayer = class CiphVideoPlayer {
                     this.shaka.addTextTrack(subtitle.file, subtitle.language, 'subtitle', 'text/vtt')
                 }
             }
+            // play video when ready
+            this.videoElm.addEventListener('loadedmetadata', () => {
+                // check if status is set
+                const previousTime = localStorage.getItem(this.statusLocalStorageKey)
+                // if time is set then check if user wants to resume from previous
+                if (previousTime) {
+                    const minutes = Math.floor(previousTime/60)
+                        .toString().padStart(2, '0')
+                    const seconds = Math.floor(previousTime - minutes * 60)
+                        .toString().padStart(2, '0')
+                    if (confirm(`Playback in progress. Click OK to resume from ${minutes}:${seconds} or Cancel to start from beginning.`)) {
+                        this.videoElm.currentTime = parseInt(previousTime)
+                    }
+                    localStorage.removeItem(this.statusLocalStorageKey)
+                }
+                // play video
+                this.videoElm.play()
+            })
+            // add event handler to pause video when tab hidden
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    this.videoElm.pause()
+                }
+            })
+            // add event handler to keep track of position in video
+            this.videoElm.addEventListener('timeupdate', ev => {
+                // if video has reached end then delete status
+                if (this.videoElm.currentTime === this.videoElm.duration) {
+                    localStorage.removeItem(this.statusLocalStorageKey)
+                }
+                // otherwise store current status
+                else {
+                    localStorage.setItem(this.statusLocalStorageKey, this.videoElm.currentTime)
+                }
+            })
         })
     }
-
 }
 
 /* private methods */

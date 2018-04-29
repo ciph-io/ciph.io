@@ -166,6 +166,20 @@ module.exports = class BlockService {
     }
 
     /**
+     * @function getBytes
+     *
+     * get bytes for block size
+     *
+     * @param {integer|string} size
+     *
+     * @returns {integer}
+     */
+    static getBytes (size) {
+        assert(defined(blockSizes[size]), 'invalid block size')
+        return blockSizes[size]
+    }
+
+    /**
      * @function getDataDir
      *
      * get data dir for server based on prefix of block as integer
@@ -192,20 +206,7 @@ module.exports = class BlockService {
      * @returns Promise<array>
      */
     static async getRandomBlocks (size) {
-        const blockServers = await RedisService.getRandomBlockServers(size)
-
-        const results = []
-
-        for (const blockServer of blockServers) {
-            if (blockServer === null) continue
-
-            results.push({
-                blockId: blockServer.id,
-                urls: BlockService.getUrlsForBlock(blockServer),
-            })
-        }
-
-        return results
+        return RedisService.getRandomBlockIds(size)
     }
 
     /**

@@ -14,9 +14,28 @@ window.el = document.getElementById.bind(document)
 
 window.CiphUtil = class CiphUtil {
 
+    static bufferConcat (buffers) {
+        let totalLength = 0
+        // get length of all buffers
+        for (const buffer of buffers) {
+            totalLength += buffer.byteLength
+        }
+        // create new buffer with combined length
+        const buffer = new ArrayBuffer(totalLength)
+        // offset if destination buffer when copying
+        let offset = 0
+        // copy data to new buffer
+        for (const source of buffers) {
+            CiphUtil.bufferCopy(source, buffer, source.byteLength, 0, offset)
+            offset += source.byteLength
+        }
+
+        return buffer
+    }
+
     static bufferCopy (srcBuffer, dstBuffer, bytes=0, srcOffset=0, dstOffset=0) {
-        const srcArr = new Uint8Array(srcBuffer)
         const dstArr = new Uint8Array(dstBuffer)
+        const srcArr = new Uint8Array(srcBuffer)
 
         for (let i=0; i<bytes; i++) {
             dstArr[dstOffset+i] = srcArr[srcOffset+i]
@@ -97,6 +116,31 @@ window.CiphUtil = class CiphUtil {
         }
 
         return arr[Math.floor(Math.random() * arr.length)]
+    }
+
+    static async sha256 (data, encoding, length) {
+        if (encoding) {
+            assert(encoding === 'hex', 'invalid encoding')
+        }
+
+        const digest = await crypto.subtle.digest({ name: 'SHA-256' }, data)
+
+        if (length) {
+            if (encoding === 'hex') {
+                return CiphUtil.bufferToHex(digest).substr(0, length)
+            }
+            else {
+                return new DataView(digest, 0, length)
+            }
+        }
+        else {
+            if (encoding === 'hex') {
+                return CiphUtil.bufferToHex(digest)
+            }
+            else {
+                return digest
+            }
+        }
     }
 
     static xorBuffer (a, b) {

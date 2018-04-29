@@ -49,25 +49,29 @@ setProxyHost()
 window.CiphContainerClient = class CiphContainerClient {
 
     constructor (url, options = {}) {
-        const link = this.getLinkFromUrl(url)
+        this.link = this.getLinkFromUrl(url)
         // encryption key for chat messages
         this.chatKeyBuffer = null
         // list of data blocks
         this.dataBlocks = []
         // data included in head block if any
         this.dataBuffer = null
+        // key buffer that will be derived from string password and salt
+        this.keyBuffer = null
         // 32 byte hex hash id of head block ids and derived key
-        this.id = ''
+        this.privateId = ''
+        // 32 byte hex hash id of head block ids
+        this.publicId = ''
         // meta data
         this.meta = null
         // list of meta blocks if any
         this.metaBlocks = []
         // ciph user
         this.user = options.user || window.ciphUser
-        // head block 
+        // head block
         this.head = {
             data: null,
-            promise: this.loadHead(link),
+            promise: this.loadHead(),
         }
     }
 
@@ -155,7 +159,7 @@ window.CiphContainerClient = class CiphContainerClient {
         // create view of block with only the plain prefix and unencrypted data
         const decryptedBlockView = new DataView(block, 0, offset+2)
         // calculate digest to verify
-        const digest = await crypto.subtle.digest({ name: 'SHA-256' }, decryptedBlockView)
+        const digest = await CiphUtil.sha256(decryptedBlockView)
         assert(CiphUtil.buffersEqual(headDigest, digest), 'head digest verification failed')
         // if there are no meta blocks then meta is included in head
         if (numMetaBlocks === 0) {
@@ -167,6 +171,16 @@ window.CiphContainerClient = class CiphContainerClient {
         else {
             throw new Error('meta blocks not yet supported')
         }
+        // set ids once data verified
+        this.publicId = await CiphUtil.sha256( CiphUtil.bufferConcat([
+            CiphUtil.bufferFromHex(this.link.blockId0),
+            CiphUtil.bufferFromHex(this.link.blockId1)
+        ]), 'hex', 32)
+        this.privateId = await CiphUtil.sha256( CiphUtil.bufferConcat([
+            CiphUtil.bufferFromHex(this.link.blockId0),
+            CiphUtil.bufferFromHex(this.link.blockId1),
+            this.keyBuffer
+        ]), 'hex', 32)
     }
 
     /**
@@ -183,7 +197,7 @@ window.CiphContainerClient = class CiphContainerClient {
         // get raw key
         const rawKey = await crypto.subtle.exportKey('raw', key)
         // get hash of raw key to use as iv for decrypt
-        const digest = await crypto.subtle.digest({ name: 'SHA-256' }, rawKey)
+        const digest = await CiphUtil.sha256(rawKey)
         // use first 16 bytes of digest for iv
         const counter = digest.slice(0, 16)
         // decrypt block
@@ -378,7 +392,7 @@ window.CiphContainerClient = class CiphContainerClient {
             dstOffset += copyBytes
         }
         // get digest of file to validate
-        const digest = await crypto.subtle.digest({ name: 'SHA-256' }, buffer)
+        const digest = await CiphUtil.sha256(buffer)
         assert(CiphUtil.bufferToHex(digest) === file.digest, 'invalid file')
 
         return buffer
@@ -423,7 +437,7 @@ window.CiphContainerClient = class CiphContainerClient {
      * @returns {string}
      */
     getPage () {
-        assert(this.meta.type === 'page', 'invalid content type')
+        assert(this.meta && this.meta.type === 'page', 'invalid content type')
         assert(this.dataBuffer, 'dataBuffer is null')
         // decompress page data
         return pako.ungzip(this.dataBuffer, { to: 'string' })
@@ -446,6 +460,10 @@ window.CiphContainerClient = class CiphContainerClient {
         // if user is loading must wait
         if (this.user.promise) {
             await this.user.promise
+        }
+        // do not continue if no user credit
+        if (this.user.data.credit <= 0) {
+            throw new Error('no credit')
         }
         // get values for authentication
         const id = this.user.data.token.type === 'anon' ? this.user.data.anonId : this.user.data.userId
@@ -488,11 +506,10 @@ window.CiphContainerClient = class CiphContainerClient {
      * load head block
      * prompt for password if not in url
      *
-     * @param {object} link
-     *
      * @returns {Promise}
      */
-    async loadHead (link) {
+    async loadHead () {
+        const link = this.link
         let block
         // download and xor blocks
         try {
@@ -500,8 +517,12 @@ window.CiphContainerClient = class CiphContainerClient {
         }
         catch (err) {
             const message = defined(err) ? err.message : 'unknown'
-            alert(`Error: ${message}`)
-            throw err
+            // no credit is alerted elsewhere
+            if (message !== 'no credit') {
+                alert(`Error: ${message}`)
+            }
+            console.error(err)
+            return
         }
         // get data view for block
         const blockView = new DataView(block)
@@ -528,6 +549,8 @@ window.CiphContainerClient = class CiphContainerClient {
                     CiphUtil.bufferFromString(link.password),
                     CiphUtil.bufferFromHex(link.salt)
                 )
+                // key raw key
+                this.keyBuffer = await crypto.subtle.exportKey('raw', key)
                 // decrypt head block
                 const data = await this.decryptBlock(encryptedBlock, key)
                 // extract binary encoded head data

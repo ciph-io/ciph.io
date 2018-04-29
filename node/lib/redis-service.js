@@ -71,6 +71,34 @@ class RedisService {
     }
 
     /**
+     * @function decrAnonCredit
+     *
+     * decrement credit for anon id (ip)
+     *
+     * @param {string} anonId
+     * @param {integer|string} amount
+     *
+     * @returns {Promise<string>}
+     */
+    static async decrAnonCredit (anonId, amount) {
+        return RedisService.getClient('anonCredit').decrby(anonId, amount)
+    }
+
+    /**
+     * @function decrUserCredit
+     *
+     * decrement credit for user id
+     *
+     * @param {string} userId
+     * @param {integer|string} amount
+     *
+     * @returns {Promise<string>}
+     */
+    static async decrUserCredit (userId, amount) {
+        return RedisService.getClient('userCredit').decrby(userId, amount)
+    }
+
+    /**
      * @function getAnonBlockCount
      *
      * get sum of blocks/unblocks for anon
@@ -190,15 +218,15 @@ class RedisService {
     }
 
     /**
-     * @function getRandomBlockServers
+     * @function getRandomBlockIds
      *
-     * get id and servers for random block of given size.
+     * get ids for random blocks of given size.
      *
      * @param {integer} size
      *
      * @returns {Promise<object>}
      */
-    static async getRandomBlockServers (size) {
+    static async getRandomBlockIds (size) {
         // create new pipeline to get multiple random blocks
         const pipeline = RedisService.getBlockServerClient(size).pipeline()
         // get 5 random block ids
@@ -210,9 +238,7 @@ class RedisService {
         // execute queued commands
         const results = await pipeline.exec()
         // extract ids from results
-        const ids = results.map(result => result[1])
-        // get blocks for ids
-        return RedisService.getBlockServersMulti(size, ids)
+        return results.map(result => result[1]).filter(result => result !== null)
     }
 
     /**
