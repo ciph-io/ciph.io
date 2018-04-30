@@ -566,6 +566,10 @@ window.CiphContainerClient = class CiphContainerClient {
         }
     }
 
+    static setProxyHost (setProxyHost) {
+        proxyHost = setProxyHost
+    }
+
     /**
      * @function validate
      *
