@@ -233,9 +233,9 @@ module.exports = class ServerService {
     static getServerById (id) {
         // convert id to int from hex
         const intId = parseInt(id, 16)
-        assert(serverConf[id], 'invalid server id')
+        assert(serverConf[intId], 'invalid server id')
 
-        return serverConf[id]
+        return serverConf[intId]
     }
 
     /**
