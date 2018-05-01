@@ -2,16 +2,10 @@
 
 /* npm modules */
 const crypto = require('mz/crypto')
-const defined = require('if-defined')
 
 /* app modules */
 const RedisService = require('./redis-service')
-const assert = require('../lib/assert')
-
-/* globals */
-const replaceRegExp = /^[0-3]:[0-9a-f]{32}:[0-9a-f]{32}$/
-const signatureRegExp = /^[0-9a-f]{64}$/
-const tokenRegExp = /^[0-9a-f]{32}$/
+const Type = require('./type')
 
 /* exports */
 module.exports = class ReplaceService {
@@ -19,56 +13,44 @@ module.exports = class ReplaceService {
     /**
      * @function createReplaceToken
      *
-     * create and store a replace token/secret pair
+     * create replace token entry for private id. generate random token if
+     * no provided.
+     *
+     * @param {string} privateId
+     * @param {string} token
      *
      * @returns {Promise<object>}
      */
-    static async createReplaceToken () {
-        // get random data
-        const data = await crypto.randomBytes(64)
-        // hash data to create token/secret
-        const hash = crypto.createHash('sha256')
-        hash.update(data)
-        const digest = hash.digest('hex')
-        // split digest into token and secret
-        const token = digest.substr(0, 32)
-        const secret = digest.substr(32, 32)
-        // save token
-        await RedisService.getClient('replaceToken').set(token, secret)
+    static async createReplaceToken (privateId, token) {
+        assert(Type.isValidHex32(privateId), 'invalid privateId')
+        // validate token it passed in
+        if (token) {
+            assert(Type.isValidHex32(token), 'invalid token')
+        }
+        // otherwise create
+        else {
+            token = (await crypto.randomBytes(16)).toString('hex')
+        }
+        // store token - throws on error
+        await RedisService.createReplaceToken(privateId, token)
 
-        return { token, secret }
+        return { privateId, token }
     }
 
     /**
      * @function getReplace
      *
-     * get replace ids and size for token
+     * get replace link for container if it exists
      *
-     * @param {string} token
+     * @param {string} privateId
      *
      * @returns {Promise<object|undefined>}
      */
-    static async getReplace (token) {
+    static async getReplace (privateId) {
         // validate args
-        assert(token.match(tokenRegExp), 'invalid token')
-        // get replace entry for token
-        const replace = await RedisService.getClient('replace').get(token)
-        if (!replace) return
-        // deleted
-        if (replace === 'x') {
-            return {deleted: true}
-        }
-        // decode replace string
-        else {
-            // replace is size:id:id
-            const parts = replace.split(':')
-
-            return {
-                b0: parts[1],
-                b1: parts[2],
-                size: parts[0],
-            }
-        }
+        assert(Type.isValidHex32(privateId), 'invalid privateId')
+        // get replace entry for container
+        return RedisService.getReplace(privateId)
     }
 
     /**
@@ -78,29 +60,24 @@ module.exports = class ReplaceService {
      * entry replaces existing.
      *
      * @param {object} args
-     * @param {string} args.id
-     * @param {string} args.signature
+     * @param {string} args.link
+     * @param {string} args.originalId
+     * @param {string} args.parentId
      * @param {string} args.token
      *
      * @returns {Promise<object>}
      */
     static async replace (args) {
         // validate args
-        assert(defined(args.replace) && (args.replace === 'x' || args.replace.match(replaceRegExp)), 'invalid replace')
-        assert(defined(args.signature) && args.signature.match(signatureRegExp), 'invalid signature')
-        assert(defined(args.token) && args.token.match(tokenRegExp), 'invalid token')
-        // get secret for token
-        const secret = await RedisService.getClient('replaceToken').get(args.token)
-        assert(secret, 'invalid token')
-        // create hmac to validate signature
-        const hmac = crypto.createHmac('sha256', Buffer.from(secret, 'hex'));
-        hmac.update(args.replace)
-        const signature = hmac.digest('hex')
-        console.log(signature)
-        // validate signature
-        assert(args.signature === signature, 'invalid signature')
-        // store replacement id for token
-        await RedisService.getClient('replace').set(args.token, args.replace)
+        assert(Type.isValidSecureLink(args.link), 'invalid link')
+        assert(Type.isValidHex32(args.originalId), 'invalid originalId')
+        assert(Type.isValidHex32(args.parentId), 'invalid parentId')
+        assert(Type.isValidHex32(args.token), 'invalid token')
+        // token must validate against the container being replaced
+        const token = await RedisService.getReplaceToken(args.originalId)
+        assert(args.token === token, 'invalid token')
+        // create replacement entries
+        await RedisService.createReplace(args.originalId, args.parentId, args.link)
     }
 
 }

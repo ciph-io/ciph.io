@@ -9,6 +9,8 @@ const MB = 1024*KB
 
 const hash32RegExp = /^[0-9a-f]{32}$/
 const hash64RegExp = /^[0-9a-f]{64}$/
+const secureLinkRegExp = /^\d-\d(-[0-9a-f]{32}){3}$/
+
 const blockSizes = [ 4*KB, 16*KB, 64*KB, 256*KB, 1*MB, 4*MB, 16*MB ]
 const contentTypes = ['collection', 'page', 'video', 'audio', 'image']
 
@@ -37,6 +39,7 @@ const proxyHosts = [
     {
         hosts: [
             'https://proxy-usw-1.ciph.io',
+            'https://proxy-usw-2.ciph.io',
         ],
         region: 'usw',
         time: 0,
@@ -49,16 +52,21 @@ setProxyHost()
 window.CiphContainerClient = class CiphContainerClient {
 
     constructor (url, options = {}) {
-        this.link = this.getLinkFromUrl(url)
+        // validate and extract url components
+        this.parseUrl(url)
         // encryption key for chat messages
         this.chatKeyBuffer = null
         // list of data blocks
         this.dataBlocks = []
         // data included in head block if any
         this.dataBuffer = null
-        // key buffer that will be derived from string password and salt
+        // raw encrypted head data block
+        this.headBlock = null
+        // key object used for crypto operations
+        this.key = null
+        // raw key buffer
         this.keyBuffer = null
-        // 32 byte hex hash id of head block ids and derived key
+        // 32 byte hex hash id of head block ids and key
         this.privateId = ''
         // 32 byte hex hash id of head block ids
         this.publicId = ''
@@ -81,11 +89,10 @@ window.CiphContainerClient = class CiphContainerClient {
      * extract binary encoded head data
      *
      * @param {ArrayBuffer} data
-     * @param {ArrayBuffer} block
      *
      * @returns {Promise<object>}
      */
-    async decodeHead (data, block) {
+    async decodeHead (data) {
         let offset = 0
         // create data view
         const dataView = new DataView(data)
@@ -147,17 +154,17 @@ window.CiphContainerClient = class CiphContainerClient {
         }
         // SHA-256 digest of head data
         const headDigest = data.slice(offset, offset+32)
-        // create view of block
-        const blockView = new Uint8Array(block)
-        // create array view of decrypted data
+        // create view of raw head block
+        const blockView = new Uint8Array(this.headBlock)
+        // create view of decrypted head data
         const dataViewUint8 = new Uint8Array(data)
         // copy decrypted head data over encrypted block data so that
         // both can be hashed together to verify digest
         for (let i = 0; i < offset; i++) {
             blockView[i+2] = dataViewUint8[i]
         }
-        // create view of block with only the plain prefix and unencrypted data
-        const decryptedBlockView = new DataView(block, 0, offset+2)
+        // create view of head block with only the plain prefix and unencrypted data
+        const decryptedBlockView = new DataView(this.headBlock, 0, offset+2)
         // calculate digest to verify
         const digest = await CiphUtil.sha256(decryptedBlockView)
         assert(CiphUtil.buffersEqual(headDigest, digest), 'head digest verification failed')
@@ -171,16 +178,8 @@ window.CiphContainerClient = class CiphContainerClient {
         else {
             throw new Error('meta blocks not yet supported')
         }
-        // set ids once data verified
-        this.publicId = await CiphUtil.sha256( CiphUtil.bufferConcat([
-            CiphUtil.bufferFromHex(this.link.blockId0),
-            CiphUtil.bufferFromHex(this.link.blockId1)
-        ]), 'hex', 32)
-        this.privateId = await CiphUtil.sha256( CiphUtil.bufferConcat([
-            CiphUtil.bufferFromHex(this.link.blockId0),
-            CiphUtil.bufferFromHex(this.link.blockId1),
-            this.keyBuffer
-        ]), 'hex', 32)
+        // clear head block data when done
+        this.headBlock = null
     }
 
     /**
@@ -212,6 +211,23 @@ window.CiphContainerClient = class CiphContainerClient {
         )
 
         return plain
+    }
+
+    /**
+     * @function deriveKey
+     *
+     * derive key from password and salt
+     *
+     * @returns {Promise}
+     */
+    async deriveKey () {
+        // derive key from password and salt
+        this.key = await CiphUtil.deriveKey(
+            CiphUtil.bufferFromString(this.link.password),
+            CiphUtil.bufferFromHex(this.link.salt)
+        )
+        // raw key
+        this.keyBuffer = await crypto.subtle.exportKey('raw', this.key)
     }
 
     /**
@@ -268,6 +284,26 @@ window.CiphContainerClient = class CiphContainerClient {
         return found
     }
 
+    /**
+     * @function generateIds
+     *
+     * generate public and private ids for container
+     *
+     * @returns {Promise}
+     */
+    async generateIds () {
+        // set public id which is hash of block ids
+        this.publicId = await CiphUtil.sha256( CiphUtil.bufferConcat([
+            CiphUtil.bufferFromHex(this.link.blockId0),
+            CiphUtil.bufferFromHex(this.link.blockId1)
+        ]), 'hex', 32)
+        // set private id which is hash of block ids and key
+        this.privateId = await CiphUtil.sha256( CiphUtil.bufferConcat([
+            CiphUtil.bufferFromHex(this.link.blockId0),
+            CiphUtil.bufferFromHex(this.link.blockId1),
+            this.keyBuffer
+        ]), 'hex', 32)
+    }
 
     /**
      * @function get
@@ -399,34 +435,31 @@ window.CiphContainerClient = class CiphContainerClient {
     }
 
     /**
-     * @function getLinkFromUrl
+     * @function getHeadBlock
      *
-     * validate url and extract link from it
+     * get and validate head block
      *
-     * @param {string} url
-     *
-     * @returns {object}
+     * @returns {Promise}
      */
-    getLinkFromUrl (url) {
-        // remove any protocol from url
-        url = url.replace(/^\w+:\/\/(.*?\/enter\?ciph=)?/, '')
-        // split url into parts
-        const [blockSize, contentType, blockId0, blockId1, salt, password] = url.split('-')
-        // validate url
-        assert(defined(blockSizes[blockSize]), 'invalid block size')
-        assert(defined(contentTypes[contentType]), 'invalid content type')
-        assert(blockId0.match(hash32RegExp), 'invalid block id 0')
-        assert(blockId1.match(hash32RegExp), 'invalid block id 1')
-        assert(salt.match(hash32RegExp), 'invalid salt')
-
-        return {
-            blockSize: parseInt(blockSize),
-            contentType: parseInt(contentType),
-            blockId0,
-            blockId1,
-            salt,
-            password,
+    async getHeadBlock () {
+        // if alread loaded do not reload
+        if (this.headBlock) {
+            return
         }
+        // get and xor component blocks
+        this.headBlock = await this.getBlock(
+            this.link.blockSize,
+            this.link.blockId0,
+            this.link.blockId1
+        )
+        // validate version and content type
+        const blockView = new DataView(this.headBlock)
+        // get version from block
+        this.head.version = blockView.getInt8(0)
+        assert(this.head.version === 1, 'invalid version')
+        // get content type from block
+        this.head.contentType = blockView.getInt8(1)
+        assert(this.head.contentType === this.link.contentType, 'content type mismatch')
     }
 
     /**
@@ -441,6 +474,61 @@ window.CiphContainerClient = class CiphContainerClient {
         assert(this.dataBuffer, 'dataBuffer is null')
         // decompress page data
         return pako.ungzip(this.dataBuffer, { to: 'string' })
+    }
+
+    /**
+     * @function getPassword
+     *
+     * return true if password already set or after prompting
+     *
+     * @returns {Promise<boolean>}
+     */
+    async getPassword () {
+        // if password already set return true
+        if (typeof this.link.password === 'string' && this.link.password.length) {
+            return true
+        }
+        // prompt for password
+        this.link.password = prompt('Please enter password')
+        // return true if valid password entered
+        return typeof this.link.password === 'string' && this.link.password.length ? true : false
+    }
+
+    /**
+     * @function getReplaceLink
+     *
+     * get replacement for container if it exists
+     *
+     * @returns {Promise}
+     */
+    async getReplaceLink () {
+        // get replace link
+        const res = await this.get(`/replace?privateId=${this.privateId}`)
+        const replace = await res.json()
+        // continue unless valid link
+        if (typeof replace !== 'string' || !replace.match(secureLinkRegExp)) {
+            return
+        }
+        // get replacement info
+        const [blockSize, contentType, blockId0, blockId1, salt] = replace.split('-')
+        // update link info
+        this.link.blockSize = parseInt(blockSize)
+        this.link.contentType = parseInt(contentType)
+        this.link.blockId0 = blockId0
+        this.link.blockId1 = blockId1
+        this.link.salt = salt
+        // clear head block if set
+        this.headBlock = null
+        // derive key from password
+        await this.deriveKey()
+        // once password loaded set public and private ids
+        await this.generateIds()
+        // create url for new link
+        const url = this.link.passwordInUrl
+            ? `/enter#${replace}-${this.link.password}`
+            : `/enter#${replace}`
+        // add new url to history
+        history.pushState({}, '', url)
     }
 
     /**
@@ -503,67 +591,90 @@ window.CiphContainerClient = class CiphContainerClient {
     /**
      * @function loadHead
      *
-     * load head block
-     * prompt for password if not in url
+     * load head block. prompt for password and retry on error.
      *
      * @returns {Promise}
      */
     async loadHead () {
-        const link = this.link
-        let block
-        // download and xor blocks
-        try {
-            block = await this.getBlock(link.blockSize, link.blockId0, link.blockId1)
-        }
-        catch (err) {
-            const message = defined(err) ? err.message : 'unknown'
-            // no credit is alerted elsewhere
-            if (message !== 'no credit') {
-                alert(`Error: ${message}`)
-            }
-            console.error(err)
-            return
-        }
-        // get data view for block
-        const blockView = new DataView(block)
-        // get version from block
-        this.head.version = blockView.getInt8(0)
-        assert(this.head.version === 1, 'invalid version')
-        // get content type from block
-        this.head.contentType = blockView.getInt8(1)
-        assert(this.head.contentType === link.contentType, 'content type mismatch')
-        // first two bytes are plain, rest of head block is encrypted
-        const encryptedBlock = new DataView(block, 2)
         // retry decrypting head until password correct or canceled
         while (true) {
-            if (typeof link.password !== 'string' || link.password.length === 0) {
-                link.password = prompt('Please enter password')
-                // if promp was canceled exit loop
-                if (link.password === null) {
-                    return
-                }
-            }
-            try {
-                // derive key from password and salt
-                const key = await CiphUtil.deriveKey(
-                    CiphUtil.bufferFromString(link.password),
-                    CiphUtil.bufferFromHex(link.salt)
-                )
-                // key raw key
-                this.keyBuffer = await crypto.subtle.exportKey('raw', key)
-                // decrypt head block
-                const data = await this.decryptBlock(encryptedBlock, key)
-                // extract binary encoded head data
-                const head = await this.decodeHead(data, block)
-                // exit retry when head loaded
+            if (!await this.loadHeadAttempt()) {
                 return
             }
-            catch (err) {
-                console.error(err)
-                alert(err.message)
-                link.password = ''
-            }
         }
+    }
+
+    /**
+     * @function loadHeadAttempt
+     *
+     * load head block. prompt for password. return true to retry on error.
+     *
+     * @returns {Promise<boolean>}
+     */
+    async loadHeadAttempt () {
+        // cannot load if no password
+        if (!await this.getPassword()) {
+            return
+        }
+        // derive key from password
+        await this.deriveKey()
+        // once password loaded set public and private ids
+        await this.generateIds()
+        // check if replacement for container exists
+        await this.getReplaceLink()
+        // download head block
+        await this.getHeadBlock()
+        // try to decrypt and decode head data
+        try {
+            // skip first 2 bytes
+            const encryptedHead = new DataView(this.headBlock, 2)
+            // decrypt head block
+            const decryptedHead = await this.decryptBlock(encryptedHead, this.key)
+            // extract binary encoded head data
+            await this.decodeHead(decryptedHead)
+            // exit retry when head loaded
+            return
+        }
+        catch (err) {
+            // alert error
+            alert(err.message)
+            console.error(err)
+            // clear password
+            link.password = ''
+            // return true to show password prompt again
+            return true
+        }
+    }
+
+    /**
+     * @function parseUrl
+     *
+     * validate url and extract link from it
+     *
+     * @param {string} url
+     */
+    parseUrl (url) {
+        // remove any protocol from url
+        url = url.replace(/^\w+:\/\/(.*?\/enter\?ciph=)?/, '')
+        // split url into parts
+        const [blockSize, contentType, blockId0, blockId1, salt, password] = url.split('-')
+        // validate url
+        assert(defined(blockSizes[blockSize]), 'invalid block size')
+        assert(defined(contentTypes[contentType]), 'invalid content type')
+        assert(blockId0.match(hash32RegExp), 'invalid block id 0')
+        assert(blockId1.match(hash32RegExp), 'invalid block id 1')
+        assert(salt.match(hash32RegExp), 'invalid salt')
+        // set link
+        this.link = {
+            blockSize: parseInt(blockSize),
+            contentType: parseInt(contentType),
+            blockId0,
+            blockId1,
+            salt,
+            password,
+        }
+        // set true if password in url
+        this.link.passwordInUrl = defined(this.link.password)
     }
 
     static setProxyHost (setProxyHost) {

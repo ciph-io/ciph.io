@@ -6,7 +6,7 @@ const IORedis = require('ioredis')
 const fs = require('fs-extra')
 
 /* app modules */
-const assert = require('./assert')
+const Type = require('./type')
 
 /* globals */
 
@@ -40,6 +40,47 @@ class RedisService {
     static async createNewBlock (size, id) {
         const res = await RedisService.getBlockServerClient(size).setnx(id, 'U')
         assert(res === 1, 'blockId exists')
+    }
+
+    /**
+     * @function createReplace
+     *
+     * create replace entry for originalId and parentId if it is different
+     *
+     * @param {string} originalId
+     * @param {string} parentId
+     * @param {string} link
+     *
+     * @returns {Promise}
+     */
+    static async createReplace (originalId, parentId, link) {
+        // if parent id is set and different then create entries for both
+        if (parentId && parentId !== originalId) {
+            // original id points to link and parent id points back to original
+            const res = await RedisService.getClient('replace').multi().set(originalId, link).set(parentId, originalId).exec()
+            assert(res[0][1] === 'OK' && res[1][1] === 'OK', 'replace error')
+        }
+        // otherwise create entry only for original id
+        else {
+            const res = await RedisService.getClient('replace').set(originalId, link)
+            assert(res === 'OK', 'replace error')
+        }
+    }
+
+    /**
+     * @function createReplaceToken
+     *
+     * create replace token for container using private id. throws error if
+     * id is already registered.
+     *
+     * @param {string} privateId
+     * @param {string} token
+     *
+     * @returns {Promise}
+     */
+    static async createReplaceToken (privateId, token) {
+        const res = await RedisService.getClient('replaceToken').setnx(privateId, token)
+        assert(res === 1, 'privateId exists')
     }
 
     /**
@@ -239,6 +280,42 @@ class RedisService {
         const results = await pipeline.exec()
         // extract ids from results
         return results.map(result => result[1]).filter(result => result !== null)
+    }
+
+    /**
+     * @function getReplace
+     *
+     * get replacement link for container using private id
+     *
+     * @returns {Promise<null|string>}
+     */
+    static async getReplace (privateId) {
+        let res = await RedisService.getClient('replace').get(privateId)
+        // if result is null or a valid link then return
+        if (res === null || Type.isValidSecureLink(res) || Type.isValidDelete(res)) {
+            return res
+        }
+        // if result is another id then fetch again
+        if (Type.isValidHex32(res)) {
+            res = await RedisService.getClient('replace').get(res)
+            // return if link found
+            if (Type.isValidSecureLink(res) || Type.isValidDelete(res)) {
+                return res
+            }
+        }
+        // return null if no valid links found
+        return null
+    }
+
+    /**
+     * @function getReplaceToken
+     *
+     * get replace token for container using private id
+     *
+     * @returns {Promise<null|string>}
+     */
+    static async getReplaceToken (privateId, token) {
+        return RedisService.getClient('replaceToken').get(privateId)
     }
 
     /**

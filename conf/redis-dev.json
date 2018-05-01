@@ -62,5 +62,15 @@
         "host": "localhost",
         "port": "6379",
         "db": "12"
+    },
+    "replace": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "13"
+    },
+    "replaceToken": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "14"
     }
 }
