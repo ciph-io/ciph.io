@@ -18,6 +18,9 @@ window.CiphChat = class CiphChat {
         // set user using global default
         this.user = ciphUser || window.ciphUser
 
+        // get seen intro flag from local storage
+        const seenIntro = localStorage.getItem('chat-intro')
+
         // index of blocked ids
         this.blocks = {}
         // timeouts set to clear messages
@@ -38,8 +41,8 @@ window.CiphChat = class CiphChat {
         this.new = 0
         // socket will be set on connect
         this.socket = null
-        // connect to chat server
-        this.promise = this.connect()
+        // connect to chat server or show intro if not seen
+        this.promise = seenIntro ? this.connect() : this.intro()
     }
 
     block (messageId) {
@@ -194,6 +197,84 @@ window.CiphChat = class CiphChat {
         el('ciph-chat-status-messages').classList.remove('hide')
         el('ciph-chat-show').classList.remove('hide')
         this.hidden = true
+    }
+
+    intro () {
+        // list of intro messages to show user
+        const introMessages = [
+            {
+                anonId: 'ciph',
+                delay: 1500,
+                id: 'intro-message-1',
+                message: 'Welcome to Ciph',
+            },
+            {
+                anonId: 'ciph',
+                delay: 2500,
+                id: 'intro-message-2',
+                message: 'Chat lets you talk to other users and search for content',
+            },
+            {
+                anonId: 'ciph',
+                delay: 3000,
+                id: 'intro-message-3',
+                message: 'Ciph chat is unmonitored and uncensored',
+            },
+            {
+                anonId: 'ciph',
+                delay: 3000,
+                id: 'intro-message-3',
+                message: 'You can block users by clicking "Block" next to the user id',
+            },
+            {
+                anonId: 'ciph',
+                delay: 1000,
+                id: 'intro-message-4',
+                message: 'To search type "search" like ...',
+            },
+            {
+                anonId: 'ciph',
+                delay: 2000,
+                id: 'intro-message-5',
+                message: 'search for this',
+            },
+            {
+                anonId: 'ciph',
+                delay: 3000,
+                id: 'intro-message-6',
+                message: 'Ciph search is open source which means that anyone can respond to your search',
+            },
+            {
+                anonId: 'ciph',
+                delay: 3000,
+                id: 'intro-message-7',
+                message: 'all search results come from other users not from Ciph',
+            },
+        ]
+        return new Promise(resolve => {
+            let delay = 1000
+            // show each intro message with delay between then
+            for (let i=0; i<introMessages.length; i++) {
+                const message = introMessages[i]
+                setTimeout(() => {
+                    // add message to div
+                    el('ciph-chat-messages').appendChild(this.createMessageElm(message))
+                    // clear message after timeout
+                    this.setClearMessageTimeout(message.id)
+                    // add to list of messages
+                    this.messages.push(message)
+                    // if this is the last message then connect to chat
+                    if (i+1 === introMessages.length) {
+                        // set flag so intro wont be repeated
+                        localStorage.setItem('chat-intro', 1)
+                        // resolve promise with connection
+                        resolve(this.connect())
+                    }
+                }, delay)
+                // show next message 4 seconds later
+                delay += message.delay
+            }
+        })
     }
 
     initialize () {
