@@ -13,6 +13,35 @@ const UserService = require('./user-service')
 const connections = {}
 // number increments with each new connection
 let connectionNum = 0
+// count of connected clients
+let connectionCount = 0
+
+// set initial connection count
+RedisService.getConnectionCount().then(int => {
+    connectionCount = int
+})
+
+// send connection count to clients every 5 seconds
+setInterval(async () => {
+    // get updated connection count
+    connectionCount = await RedisService.getConnectionCount()
+    // send update count to all connected clients
+    for (const connection of Object.values(connections)) {
+        // delete connection if closed
+        if (connection.socket.readyState === WebSocket.CLOSED) {
+            continue
+        }
+        // skip if not connected
+        if (connection.socket.readyState !== WebSocket.OPEN) {
+            continue
+        }
+        // send status
+        connection.send({
+            online: connectionCount,
+            type: 'status'
+        })
+    }
+}, 5000)
 
 // subscribe to chat channel
 const chatClient = RedisService.getSubClient('chat')
@@ -29,13 +58,15 @@ class Connection {
         // assign connection number
         this.connectionNum = connectionNum++
         // add connection to global register
-        connections[connectionNum] = this
+        connections[this.connectionNum] = this
         // store socket
         this.socket = socket
         // bind socket event handlers with connection context
         socket.on('close', this.close.bind(this))
         socket.on('error', this.error.bind(this))
         socket.on('message', this.message.bind(this))
+        // increment connection count
+        RedisService.incrConnectionCount().catch(console.error)
         // load blocks for anon
         RedisService.getAnonBlocks(this.anonId).then(blocks => {
             // if any blocks have already been set merge
@@ -50,12 +81,14 @@ class Connection {
         }).catch(console.error)
         // send message to client
         this.send({
-            online: Object.keys(connections).length,
+            online: connectionCount + 1,
             type: 'status',
         })
     }
 
     close () {
+        // decrement connection count
+        RedisService.decrConnectionCount().catch(console.error)
         // remove from connections
         delete connections[this.connectionNum]
     }

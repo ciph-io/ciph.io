@@ -126,6 +126,17 @@ class RedisService {
     }
 
     /**
+     * @function decrConnectionCount
+     *
+     * decriment connection count for global chat
+     *
+     * @returns {Promise<string>}
+     */
+    static async decrConnectionCount () {
+        return RedisService.getClient('chat').decr('connection-count')
+    }
+
+    /**
      * @function decrUserCredit
      *
      * decrement credit for user id
@@ -259,6 +270,19 @@ class RedisService {
     }
 
     /**
+     * @function getConnectionCount
+     *
+     * get connection count for global chat
+     *
+     * @returns {Promise<string>}
+     */
+    static async getConnectionCount () {
+        const res = await RedisService.getClient('chat').get('connection-count')
+        const int = parseInt(res)
+        return int ? int : 0
+    }
+
+    /**
      * @function getRandomBlockIds
      *
      * get ids for random blocks of given size.
@@ -355,6 +379,17 @@ class RedisService {
      */
     static async incrAnonBlockCount (anonId) {
         return RedisService.getClient('anonBlockCount').incr(anonId)
+    }
+
+    /**
+     * @function incrConnectionCount
+     *
+     * increment connection count for global chat
+     *
+     * @returns {Promise<string>}
+     */
+    static async incrConnectionCount () {
+        return RedisService.getClient('chat').incr('connection-count')
     }
 
     /**
