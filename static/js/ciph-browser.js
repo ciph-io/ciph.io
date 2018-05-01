@@ -115,6 +115,9 @@ window.CiphBrowser = class CiphBrowser {
             if (scrollOffsets[location.hash]) {
                 window.scrollTo(0, scrollOffsets[location.hash])
             }
+            else {
+                window.scrollTo(0, 0)
+            }
         })
     }
 
@@ -123,6 +126,8 @@ window.CiphBrowser = class CiphBrowser {
         this.elm.innerHTML = `<video id="ciph-video" controls></video>`
         // create video player
         this.active = new CiphVideoPlayer('ciph-video', this.activeLink, this)
+        // always scroll to top
+        window.scrollTo(0, 0)
     }
 
     setTitle (title, onPage) {
