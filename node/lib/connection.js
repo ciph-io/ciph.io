@@ -149,6 +149,9 @@ class Connection {
         if (blockCount > 5) {
             message.blocked = true
         }
+        // set real anonId on message since client can set whatever they want
+        message.anonId = this.anonId
+        // send message to redis pub/sub
         await RedisService.sendChatMessage(message)
     }
 
@@ -193,6 +196,10 @@ function handleMessage (channel, message) {
     const unblockedJson = JSON.stringify(unblocked)
     // send message to each connected client
     for (const connection of Object.values(connections)) {
+        // if this is private message skip unless this is connection
+        if (defined(message.toAnonId) && message.toAnonId !== connection.anonId) {
+            continue
+        }
         // skip if not connected
         if (connection.socket.readyState !== WebSocket.OPEN) {
             continue
