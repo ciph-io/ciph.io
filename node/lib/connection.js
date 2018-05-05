@@ -79,6 +79,11 @@ class Connection {
                 this.blocks = blocks
             }
         }).catch(console.error)
+        // send message to redis pub/sub
+        RedisService.sendChatMessage({
+            anonId: this.anonId,
+            type: 'join',
+        }).catch(console.error)
         // send message to client
         this.send({
             online: connectionCount + 1,
@@ -89,6 +94,11 @@ class Connection {
     close () {
         // decrement connection count
         RedisService.decrConnectionCount().catch(console.error)
+        // send message to redis pub/sub
+        RedisService.sendChatMessage({
+            anonId: this.anonId,
+            type: 'leave',
+        }).catch(console.error)
         // remove from connections
         delete connections[this.connectionNum]
     }

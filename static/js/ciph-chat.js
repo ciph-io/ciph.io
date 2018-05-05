@@ -316,6 +316,7 @@ window.CiphChat = class CiphChat {
     }
 
     messageJson (data) {
+        console.log(data)
         switch (data.type) {
             case 'message':
                 return this.messageMessage(data)
