@@ -42,7 +42,7 @@ window.CiphChat = class CiphChat {
         // socket will be set on connect
         this.socket = null
         // connect to chat server or show intro if not seen
-        this.promise = seenIntro ? this.connect() : this.intro()
+        this.promise = this.connect()
     }
 
     block (messageId) {
