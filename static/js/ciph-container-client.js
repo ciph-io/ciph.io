@@ -16,7 +16,6 @@ const contentTypes = ['collection', 'page', 'video', 'audio', 'image']
 
 const testBlockPath = '/get-proxy/0/5ff536a6d8d90bd3a561cd8440810b90.ciph'
 
-let lastHost = 0
 let proxyHost = ''
 let proxyRegion = ''
 
@@ -569,7 +568,7 @@ window.CiphContainerClient = class CiphContainerClient {
         const expires = this.user.data.token.expires
         const token = encodeURIComponent(this.user.data.token.value)
         // request block
-        const res = await fetch(`${getProxyHost()}/get-proxy/${blockSize}/${blockId}.ciph`, {
+        const res = await fetch(`${getProxyHost(blockId)}/get-proxy/${blockSize}/${blockId}.ciph`, {
             credentials: 'omit',
             headers: {
                 'Accept': id,
@@ -712,11 +711,13 @@ window.CiphContainerClient = class CiphContainerClient {
  * @function getProxyHost
  *
  * if explicit proxyHost is set return. otherwise if region is set return
- * host from region in round robin.
+ * host from region based on block id
+ *
+ * @param {string} blockId
  *
  * @returns {string}
  */
-function getProxyHost () {
+function getProxyHost (blockId) {
     if (proxyHost) {
         return proxyHost
     }
@@ -726,10 +727,8 @@ function getProxyHost () {
             proxyHost = CiphUtil.randomItem(proxyHosts[0].hosts)
             return proxyHost
         }
-        if (lastHost >= proxyRegionHosts.hosts.length) {
-            lastHost = 0
-        }
-        return proxyRegionHosts.hosts[lastHost++]
+        const int = parseInt(blockId.substr(0,4), 16)
+        return proxyRegionHosts.hosts[ int % proxyRegionHosts.hosts.length ]
     }
     else {
         proxyHost = CiphUtil.randomItem(proxyHosts[0].hosts)
@@ -751,9 +750,9 @@ function setProxyHost () {
         proxyHost = 'https://proxy-dev-1.ciph.io'
         dev = true
     }
-    // otherwise default to random tier 1 proxy
+    // otherwise default to germany
     else {
-        proxyHost = CiphUtil.randomItem(proxyHosts[0].hosts)
+        proxyRegion = 'de'
     }
 
     const start = Date.now()
@@ -767,7 +766,6 @@ function setProxyHost () {
         }).then(res => {
             proxyHostRegion.time = Date.now() - start
             if (!dev && !set) {
-                lastHost = 0
                 proxyHost = ''
                 proxyRegion = proxyHostRegion.region
                 console.log(`set proxy region: ${proxyRegion}`)
