@@ -98,20 +98,6 @@ window.CiphChat = class CiphChat {
         elm.classList.add('bubble')
         // get message
         let body = message.message
-        // replace http links
-        const httpLinks = body.match(httpLinksRegExp)
-        // replace link text with a tag that opens content
-        if (httpLinks) {
-            for (const link of httpLinks) {
-                const [, ciphLink] = link.match(/#([\w-]+)/)
-                const [, type] = ciphLink.split('-')
-                // skip if invalid content type
-                if (!defined(contentTypeNames[type])) {
-                    continue
-                }
-                body = body.replace(link, `<a href="${link}" onclick="ciphBrowser.open('${ciphLink}', event)">Ciph ${contentTypeNames[type]}</a>`)
-            }            
-        }
         // replace ciph links
         const ciphLinks = body.match(ciphLinksRegExp)
         // replace link text with a tag that opens content
@@ -124,6 +110,20 @@ window.CiphChat = class CiphChat {
                     continue
                 }
                 body = body.replace(link, `<a href="https://ciph.io/enter#${ciphLink}" onclick="ciphBrowser.open('${ciphLink}', event)">Ciph ${contentTypeNames[type]}</a>`)
+            }            
+        }
+        // replace http links
+        const httpLinks = body.match(httpLinksRegExp)
+        // replace link text with a tag that opens content
+        if (httpLinks) {
+            for (const link of httpLinks) {
+                const [, ciphLink] = link.match(/#([\w-]+)/)
+                const [, type] = ciphLink.split('-')
+                // skip if invalid content type
+                if (!defined(contentTypeNames[type])) {
+                    continue
+                }
+                body = body.replace(link, `<a href="${link}" onclick="ciphBrowser.open('${ciphLink}', event)">Ciph ${contentTypeNames[type]}</a>`)
             }            
         }
         // our own message
@@ -316,7 +316,6 @@ window.CiphChat = class CiphChat {
     }
 
     messageJson (data) {
-        console.log(data)
         switch (data.type) {
             case 'message':
                 return this.messageMessage(data)

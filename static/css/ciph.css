@@ -53,7 +53,6 @@ h3 {
     margin: 20px auto;
     width: 100%;
     max-width: 1000px;
-    padding: 0 5px;
     clear: both;
 }
 
@@ -148,6 +147,7 @@ h3 {
 
 #ciph-page {
     color: #c2c2c2;
+    margin: 8px;
 }
 
 #ciph-page a {

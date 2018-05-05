@@ -47,6 +47,9 @@ window.CiphBrowser = class CiphBrowser {
         if (link.match(/^ciph:\/\//)) {
             link = '/enter#' + link.replace(/^ciph:\/\//, '')
         }
+        else if (link.match(/^\d/)) {
+            link = '/enter#' + link
+        }
         history.pushState({}, '', link)
         this.render(link)
         return false
