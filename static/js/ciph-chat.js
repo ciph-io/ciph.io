@@ -27,6 +27,8 @@ window.CiphChat = class CiphChat {
         this.clearMessageTimeouts = []
         // set to true when chat view is in expanded state
         this.expanded = false
+        // set to false once opened for the first time
+        this.first = true
         // set to true when chat is hidden
         this.hidden = false
         // set true once connected
@@ -365,7 +367,12 @@ window.CiphChat = class CiphChat {
     }
 
     open (ev) {
-
+        if (this.first) {
+            if (window.innerWidth > 900) {
+                this.expand()
+            }
+            this.first = false
+        }
     }
 
     send (data) {

@@ -16,7 +16,9 @@ const contentTypes = ['collection', 'page', 'video', 'audio', 'image']
 
 const testBlockPath = '/get-proxy/0/5ff536a6d8d90bd3a561cd8440810b90.ciph'
 
+let lastHost = 0
 let proxyHost = ''
+let proxyRegion = ''
 
 const proxyHosts = [
     {
@@ -567,7 +569,7 @@ window.CiphContainerClient = class CiphContainerClient {
         const expires = this.user.data.token.expires
         const token = encodeURIComponent(this.user.data.token.value)
         // request block
-        const res = await fetch(`${proxyHost}/get-proxy/${blockSize}/${blockId}.ciph`, {
+        const res = await fetch(`${getProxyHost()}/get-proxy/${blockSize}/${blockId}.ciph`, {
             credentials: 'omit',
             headers: {
                 'Accept': id,
@@ -707,6 +709,35 @@ window.CiphContainerClient = class CiphContainerClient {
 /* private methods */
 
 /**
+ * @function getProxyHost
+ *
+ * if explicit proxyHost is set return. otherwise if region is set return
+ * host from region in round robin.
+ *
+ * @returns {string}
+ */
+function getProxyHost () {
+    if (proxyHost) {
+        return proxyHost
+    }
+    if (proxyRegion) {
+        const proxyRegionHosts = proxyHosts.find(proxyRegionHosts => proxyRegionHosts.region === proxyRegion)
+        if (!proxyRegionHosts) {
+            proxyHost = CiphUtil.randomItem(proxyHosts[0].hosts)
+            return proxyHost
+        }
+        if (lastHost >= proxyRegionHosts.hosts.length) {
+            lastHost = 0
+        }
+        return proxyRegionHosts.hosts[lastHost++]
+    }
+    else {
+        proxyHost = CiphUtil.randomItem(proxyHosts[0].hosts)
+        return proxyHost
+    }
+}
+
+/**
  * @function setProxyHost
  *
  * set proxy host, first using default, then setting host based on respose
@@ -736,8 +767,10 @@ function setProxyHost () {
         }).then(res => {
             proxyHostRegion.time = Date.now() - start
             if (!dev && !set) {
-                console.log(`set proxy host: ${newProxyHost}`)
-                proxyHost = newProxyHost
+                lastHost = 0
+                proxyHost = ''
+                proxyRegion = proxyHostRegion.region
+                console.log(`set proxy region: ${proxyRegion}`)
                 set = true
             }
         }).catch(console.error)
