@@ -137,6 +137,17 @@ h3 {
     word-wrap: break-word;
 }
 
+#ciph-chat-messages .message ol, #ciph-chat-messages .message p, #ciph-chat-messages .message ul {
+    -webkit-margin-before: 0;
+    -webkit-margin-after: 0;
+    margin: 0;
+}
+
+#ciph-chat-messages .message a {
+    color: #00CB3A;
+    font-weight: bold;
+}
+
 #ciph-logo {
     float: right;
 }
@@ -208,7 +219,7 @@ h3 {
 
 @media only screen and (min-width: 900px) {
     body {
-        font-size: 125%;
+        font-size: 135%;
     }
 
     #ciph-browser p {

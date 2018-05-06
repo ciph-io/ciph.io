@@ -6,6 +6,18 @@ const secureLinkRegExp = /^\d-\d(-[0-9a-f]{32}){3}$/
 
 module.exports = class Type {
 
+    static isInt (val) {
+        if (typeof val === 'string') {
+            return val.match(/^\d+$/)
+        }
+        else if (typeof val === 'number') {
+            return parseInt(val) === val
+        }
+        else {
+            return false
+        }
+    }
+
     static isValidDelete (val) {
         return typeof val === 'X'
     }

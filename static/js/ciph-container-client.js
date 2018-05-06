@@ -85,6 +85,7 @@ window.CiphContainerClient = class CiphContainerClient {
         // list of meta blocks if any
         this.metaBlocks = []
         // ciph user
+        this.partner = options.partner || window.ciphPartner
         this.user = options.user || window.ciphUser
         // head block
         this.head = {
@@ -187,6 +188,10 @@ window.CiphContainerClient = class CiphContainerClient {
         }
         else {
             throw new Error('meta blocks not yet supported')
+        }
+        // set active user id for partner credit
+        if (this.meta.userId) {
+            this.partner.setActiveUserId(this.meta.userId)
         }
         // clear head block data when done
         this.headBlock = null

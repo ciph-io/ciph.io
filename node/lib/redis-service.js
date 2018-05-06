@@ -343,6 +343,36 @@ class RedisService {
     }
 
     /**
+     * @function getSetAnonLastRequest
+     *
+     * get/set last request time for anon id
+     *
+     * @param {string} anonId
+     * @param {integer|string} time
+     *
+     * @returns {Promise<integer>}
+     */
+    static async getSetAnonLastRequest (anonId, time) {
+        const res = await RedisService.getClient('anonLastRequest').getset(anonId, time)
+        return Type.isInt(res) ? parseInt(res) : 0
+    }
+
+    /**
+     * @function getSetUserLastRequest
+     *
+     * get/set last request time for user id
+     *
+     * @param {string} userId
+     * @param {integer|string} time
+     *
+     * @returns {Promise<integer>}
+     */
+    static async getSetUserLastRequest (userId, time) {
+        const res = await RedisService.getClient('userLastRequest').getset(userId, time)
+        return Type.isInt(res) ? parseInt(res) : 0
+    }
+
+    /**
      * @function getUserCredit
      *
      * get user credit
@@ -382,6 +412,27 @@ class RedisService {
     }
 
     /**
+     * @function incrAnonPartnerTimes
+     *
+     * increment anon time attributed to partner - identified by user id
+     * takes array of user ids and integer time values
+     *
+     * @param {array} partnerTimes
+     *
+     * @returns {Promise}
+     */
+    static async incrAnonPartnerTimes (partnerTimes) {
+        // build command
+        const commands = []
+
+        for (let i=0; i < partnerTimes.length; i+=2) {
+            commands.push( ['incrby', partnerTimes[i], partnerTimes[i+1]] )
+        }
+
+        const res = await RedisService.getClient('anonPartnerTime').multi(commands).exec()
+    }
+
+    /**
      * @function incrConnectionCount
      *
      * increment connection count for global chat
@@ -390,6 +441,27 @@ class RedisService {
      */
     static async incrConnectionCount () {
         return RedisService.getClient('chat').incr('connection-count')
+    }
+
+    /**
+     * @function incrUserPartnerTimes
+     *
+     * increment user time attributed to partner - identified by user id
+     * takes array of user ids and integer time values
+     *
+     * @param {array} partnerTimes
+     *
+     * @returns {Promise}
+     */
+    static async incrUserPartnerTimes (partnerTimes) {
+        // build command
+        const commands = []
+
+        for (let i=0; i < partnerTimes.length; i+=2) {
+            commands.push( ['incrby', partnerTimes[i], partnerTimes[i+1]] )
+        }
+
+        const res = await RedisService.getClient('userPartnerTime').multi(commands).exec()
     }
 
     /**

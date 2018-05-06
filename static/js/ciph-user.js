@@ -14,6 +14,8 @@ window.CiphUser = class CiphUser {
         this.localStorageKey = args.localStorageKey || 'ciph-user'
         // user data
         this.data = null
+        // parter object
+        this.partner = args.partner || window.ciphPartner
         // promise set when loading
         this.promise = null
         // load user from local storage
@@ -94,9 +96,14 @@ window.CiphUser = class CiphUser {
         if (this.data) {
             headers['x-secret'] = this.data.secret
         }
-        const url = this.data && this.data.userId ? `/user?userId=${this.data.userId}` : '/user'
+        // get partner time data
+        const partnerTime = this.partner.getPartnerTimeArray().join(',')
+        const url = this.data && this.data.userId
+            ? `/user?userId=${this.data.userId}&partnerTime=${partnerTime}`
+            : `/user?partnerTime=${partnerTime}`
         // make request for user info
         const res = await fetch(url, {
+            cache: 'no-store',
             credentials: 'omit',
             headers: headers,
         })
@@ -132,7 +139,11 @@ window.CiphUser = class CiphUser {
         // store user info
         this.data = user
         // load user data
-        return this.refresh(true)
+        await this.refresh(true)
+        // if userId and secret not set then login failed
+        if (!this.data.userId || !this.data.secret) {
+            alert('Login failed')
+        }
     }
 
     logout () {

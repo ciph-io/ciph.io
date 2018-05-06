@@ -88,14 +88,22 @@ async function initData () {
 
     }
 
+    let created = 0
+    let createdBytes = 0
+
     // create random files
     for (let i=0; i < numRandomFiles; i++) {
         // create random file for each size
         for (let j=0; j < bytesBySize.length; j++) {
             // create random file in path
             await createRandomFile(j)
+            // increment created counts
+            created++
+            createdBytes += bytesBySize[j]
         }
     }
+
+    console.log(`created ${created} files - ${createdBytes/1024/1024/1024} GB`)
 
 }
 

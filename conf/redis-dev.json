@@ -72,5 +72,25 @@
         "host": "localhost",
         "port": "6379",
         "db": "14"
+    },
+    "anonLastRequest": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "15"
+    },
+    "userLastRequest": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "16"
+    },
+    "anonPartnerTime": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "17"
+    },
+    "userPartnerTime": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "18"
     }
 }

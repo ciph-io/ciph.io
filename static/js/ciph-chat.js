@@ -98,43 +98,14 @@ window.CiphChat = class CiphChat {
         const elm = ce('div')
         elm.setAttribute('id', message.id)
         elm.classList.add('bubble')
-        // get message
-        let body = message.message
-        // replace ciph links
-        const ciphLinks = body.match(ciphLinksRegExp)
-        // replace link text with a tag that opens content
-        if (ciphLinks) {
-            for (const link of ciphLinks) {
-                const [, ciphLink] = link.match(/^ciph:\/\/([\w-]+)/)
-                const [, type] = ciphLink.split('-')
-                // skip if invalid content type
-                if (!defined(contentTypeNames[type])) {
-                    continue
-                }
-                body = body.replace(link, `<a href="https://ciph.io/enter#${ciphLink}" onclick="ciphBrowser.open('${ciphLink}', event)">Ciph ${contentTypeNames[type]}</a>`)
-            }            
-        }
-        // replace http links
-        const httpLinks = body.match(httpLinksRegExp)
-        // replace link text with a tag that opens content
-        if (httpLinks) {
-            for (const link of httpLinks) {
-                const [, ciphLink] = link.match(/#([\w-]+)/)
-                const [, type] = ciphLink.split('-')
-                // skip if invalid content type
-                if (!defined(contentTypeNames[type])) {
-                    continue
-                }
-                body = body.replace(link, `<a href="${link}" onclick="ciphBrowser.open('${ciphLink}', event)">Ciph ${contentTypeNames[type]}</a>`)
-            }            
-        }
+        // parse message as markdown
+        const messageDOM = CiphUtil.domFromMarkdown(message.message, 'chat', '<div class="message">', '</div>')
+        const body = messageDOM.innerHTML
         // our own message
         if (message.anonId === this.user.data.anonId) {
             elm.classList.add('you')
-            elm.innerHTML = `
-                <div class="from">You</div>
-                <div class="message">${body}</div>
-            `
+            elm.innerHTML = '<div class="from">You</div>'
+            elm.appendChild(messageDOM)
         }
         // message from someone else
         else {
@@ -153,8 +124,8 @@ window.CiphChat = class CiphChat {
                         anon@${message.anonId}
                         - <a onclick="ciphChat.block('${message.id}')" class="pointer">Block</a>
                     </div>
-                    <div class="message">${body}</div>
                 `
+                elm.appendChild(messageDOM)
             }
         }
 

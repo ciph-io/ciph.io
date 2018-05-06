@@ -15,7 +15,7 @@ window.addEventListener('scroll', () => {
 // add event listener for url change
 window.addEventListener('popstate', () => {
     if (window.ciphBrowser) {
-        ciphBrowser.render(location.hash)
+        ciphBrowser.open(location.hash)
     }
 })
 
@@ -35,38 +35,83 @@ window.CiphBrowser = class CiphBrowser {
         this.lastLocalStorageKey = args.lastLocalStorageKey || 'ciph-last'
         // set user and chat client
         this.chat = args.chat || window.ciphChat
+        this.partner = args.partner || window.ciphPartner
         this.user = args.user || window.ciphUser
         // get ciph link from url
-        this.render(location.hash)
+        this.open(location.hash)
     }
 
-    open (link, ev) {
+    open (link, ev, source) {
         if (ev) {
             ev.preventDefault()
         }
-        if (link.match(/^ciph:\/\//)) {
-            link = '/enter#' + link.replace(/^ciph:\/\//, '')
+        // parse different link formats
+        link = this.parseLink(link)
+        // if click is from page then set active user id as referrer
+        if (source === 'page' && this.active) {
+            try {
+                this.partner.setReferrerUserId(this.active.client.meta.userId)
+            }
+            catch (err) {
+                console.error(err)
+            }
         }
-        else if (link.match(/^\d/)) {
-            link = '/enter#' + link
+        // otherwise if referrer id is set in url use it
+        else if (link.params.r) {
+            try {
+                this.partner.setReferrerUserId(link.params.r)
+            }
+            catch (err) {
+                console.error(err)
+            }
         }
-        history.pushState({}, '', link)
-        this.render(link)
-        return false
+        // if hash changed then add new url history
+        if (link.hash !== location.hash) {
+            history.pushState({}, '', link.href)            
+        }
+        // render link
+        this.render(link.link)
+    }
+
+    parseLink (orig) {
+        const link = {
+            orig: orig,
+            params: {},
+        }
+        // extract any params
+        if (orig.match(/,/)) {
+            const parts = orig.split(',')
+            parts.shift()
+            for (const part of parts) {
+                const [key, val] = part.split('=')
+                if (key && val) {
+                    link.params[key] = val
+                }
+            }
+        }
+        // if link starts with digit then add hash
+        if (orig.match(/^\d/)) {
+            link.hash = '#'+link
+        }
+        else if (orig.match(/^ciph:\/\//)) {
+            link.hash = '#'+orig.replace(/^ciph:\/\//, '')
+        }
+        // otherwise remove everything except hash from link
+        else {
+            link.hash = orig.replace(/^[^#]*/, '')
+        }
+        // href includes path
+        link.href = `/enter${link.hash}`
+        // link is hash with # and any params removed
+        link.link = link.hash.substring(1).replace(/,.*/, '')
+
+        return link
     }
 
     render (link) {
-        link = link.replace(/^.*?#/, '')
-        // if there is no link then go to last link if set
-        if (link.length === 0) {
-            link = localStorage.getItem(this.lastLocalStorageKey)
-            // if link is loaded then must add to history
-            if (link) {
-                history.pushState({}, '', `/enter#${link}`)
-            }
-            else {
-                return
-            }
+        // do nothing if link is empty string or otherwise not defined
+        if (!link) {
+            return
         }
         // require valid looking link
         assert(typeof link === 'string' && link.match(linkRegExp), 'invalid link')
@@ -112,7 +157,7 @@ window.CiphBrowser = class CiphBrowser {
         // create page container
         this.elm.innerHTML = `<div id="ciph-page"></div>`
         // create page viewer
-        this.active = new CiphPageViewer('ciph-page', this.activeLink, this)
+        this.active = new CiphPageViewer('ciph-page', this.activeLink)
         // after render restore scroll
         this.active.renderPromise.then(() => {
             if (scrollOffsets[location.hash]) {
@@ -128,7 +173,7 @@ window.CiphBrowser = class CiphBrowser {
         // create video tag
         this.elm.innerHTML = `<video id="ciph-video" controls></video>`
         // create video player
-        this.active = new CiphVideoPlayer('ciph-video', this.activeLink, this)
+        this.active = new CiphVideoPlayer('ciph-video', this.activeLink)
         // always scroll to top
         window.scrollTo(0, 0)
     }

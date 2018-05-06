@@ -1,3 +1,7 @@
+(function () {
+
+/* window globals */
+
 window.assert = function assert (isTrue, msg) {
     if (!isTrue) {
         alert(msg)
@@ -11,6 +15,18 @@ window.defined = function defined (val) {
 
 window.ce = document.createElement.bind(document)
 window.el = document.getElementById.bind(document)
+
+/* local globals */
+
+const MD = markdownit().disable(['image'])
+
+const ciphLinkRegExp = /^ciph:\/\//
+const httpCiphLinkRegExp = /#\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}/
+
+const linkClickHandlers = {
+    chat: function (ev) { window.ciphBrowser.open(ev.target.href, ev, 'chat') },
+    page: function (ev) { window.ciphBrowser.open(ev.target.href, ev, 'page') },
+}
 
 window.CiphUtil = class CiphUtil {
 
@@ -118,6 +134,36 @@ window.CiphUtil = class CiphUtil {
         return arr[Math.floor(Math.random() * arr.length)]
     }
 
+    static domFromMarkdown (markdown, source, pre = '<div>', post = '</div>') {
+        // require valid source
+        assert(defined(linkClickHandlers[source]), `invalid source ${source}`)
+        // create new dom fragment from markdown rendered as html
+        const dom = new DOMParser().parseFromString(
+            pre + MD.render(markdown) + post,
+            'text/html'
+        )
+        // get all links - copy to array because collection changes with dom
+        const col = dom.getElementsByTagName('a')
+        const links = []
+        for (let i=0; i < col.length; i++) links.push(col[i])
+        // remove outbound links and open ciph links with JS
+        for (let i=0; i < links.length; i++) {
+            const link = links[i]
+            if (link.href.match(ciphLinkRegExp) || link.href.match(httpCiphLinkRegExp)) {
+                link.addEventListener('click', linkClickHandlers[source])
+            }
+            else {
+                // create new element to replace link
+                const span = document.createElement('span')
+                span.textContent = `${link.textContent} (${link.href})`
+                // replace link with span text
+                link.parentNode.replaceChild(span, link)
+            }
+        }
+        // return container div
+        return dom.getElementsByTagName('div')[0]
+    }
+
     static async sha256 (data, encoding, length) {
         if (encoding) {
             assert(encoding === 'hex', 'invalid encoding')
@@ -161,3 +207,5 @@ window.CiphUtil = class CiphUtil {
         return xor
     }
 }
+
+})()
