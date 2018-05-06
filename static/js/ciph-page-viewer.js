@@ -31,9 +31,7 @@ window.CiphPageViewer = class CiphPageViewer {
 
     render () {
         // render dom from markdown
-        const dom = CiphUtil.domFromMarkdown(this.markdown, 'page')
-        // set id on dom to match page elm
-        dom.id = this.pageElmId
+        const dom = CiphUtil.domFromMarkdown(this.markdown, 'page', `<div id="${this.pageElmId}">`, '</div>')
         // replace existing page
         this.pageElm.parentNode.replaceChild(dom, this.pageElm)
         // update reference to element
