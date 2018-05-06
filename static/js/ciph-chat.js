@@ -2,11 +2,6 @@
 
 'use strict'
 
-/* globals */
-const ciphLinksRegExp = /ciph:\/\/\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}(-[a-f0-9]{64})?/g
-const contentTypeNames = ['Collection', 'Page', 'Video', 'Audio', 'Image']
-const httpLinksRegExp = /https:\/\/(dev\.)?ciph\.io\/enter.*?#\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}(-[a-f0-9]{64})?/g
-
 /* exports */
 window.CiphChat = class CiphChat {
 
@@ -100,7 +95,6 @@ window.CiphChat = class CiphChat {
         elm.classList.add('bubble')
         // parse message as markdown
         const messageDOM = CiphUtil.domFromMarkdown(message.message, 'chat', '<div class="message">', '</div>')
-        const body = messageDOM.innerHTML
         // our own message
         if (message.anonId === this.user.data.anonId) {
             elm.classList.add('you')

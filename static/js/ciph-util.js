@@ -21,6 +21,9 @@ window.el = document.getElementById.bind(document)
 const MD = markdownit().disable(['image'])
 
 const ciphLinkRegExp = /^ciph:\/\//
+const ciphLinksRegExp = /\b(https|ciph):\/\/.*?\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}[^\s]*/g
+const ciphLinkExtractRegExp = /^.*?(\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}.*)/
+const contentTypeNames = ['Collection', 'Page', 'Video', 'Audio', 'Image']
 const httpCiphLinkRegExp = /#\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}/
 
 const linkClickHandlers = {
@@ -137,6 +140,22 @@ window.CiphUtil = class CiphUtil {
     static domFromMarkdown (markdown, source, pre = '<div>', post = '</div>') {
         // require valid source
         assert(defined(linkClickHandlers[source]), `invalid source ${source}`)
+        // it data is a single link and does not contain link formatting then
+        // replace bare links in text
+        if (!markdown.match(/\n/) && !markdown.match(/[\[\]\(\)]/)) {
+            // locate any ciph links in text without markdown link formating
+            const ciphLinks = markdown.match(ciphLinksRegExp)
+            if (ciphLinks) {
+                for (const ciphLink of ciphLinks) {
+                    const [, link] = ciphLink.match(ciphLinkExtractRegExp)
+                    const contentType = link.substr(2, 1)
+                    if (!contentTypeNames[contentType]) {
+                        continue
+                    }
+                    markdown = markdown.replace(ciphLink, `[Ciph ${contentTypeNames[contentType]} Link](ciph://${link})`)
+                }
+            }
+        }
         // create new dom fragment from markdown rendered as html
         const dom = new DOMParser().parseFromString(
             pre + MD.render(markdown) + post,
