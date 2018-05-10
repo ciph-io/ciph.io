@@ -173,7 +173,9 @@ window.CiphBrowser = class CiphBrowser {
         // create video tag
         this.elm.innerHTML = `<video id="ciph-video" controls></video>`
         // create video player
-        this.active = new CiphVideoPlayer('ciph-video', this.activeLink)
+        this.active = new CiphVideoPlayer({
+            link: this.activeLink
+        })
         // always scroll to top
         window.scrollTo(0, 0)
     }

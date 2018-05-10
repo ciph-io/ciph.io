@@ -26,6 +26,7 @@
     <script src="/js/ciph-browser.js"></script>
     <script src="/js/ciph-chat.js"></script>
     <script src="/js/ciph-container-client.js"></script>
+    <script src="/js/ciph-enter.js"></script>
     <script src="/js/ciph-page-viewer.js"></script>
     <script src="/js/ciph-partner.js"></script>
     <script src="/js/ciph-user.js"></script>
@@ -71,6 +72,30 @@
     </div>
 
     <div id="ciph-browser">
+        <video id="ciph-video" controls autoplay></video>
+
+        <div id="video-playlist">
+            <div class="playlist-item">
+                <img src="/img/ciph-privacy-play.png" onclick="ciphEnter.play('privacy')" />
+            </div>
+            <div class="playlist-item">
+                <img src="/img/ciph-security-play.png" onclick="ciphEnter.play('security')" />
+            </div>
+            <div class="playlist-item">
+                <img src="/img/ciph-premium-play.png" onclick="ciphEnter.play('premium')" />
+            </div>
+            <div class="playlist-item">
+                <img src="/img/ciph-chat-play.png" onclick="ciphEnter.play('chat')" />
+            </div>
+            <div class="playlist-item">
+                <img src="/img/ciph-partner-play.png" onclick="ciphEnter.play('partner')" />
+            </div>
+            <div class="playlist-item">
+                <img src="/img/ciph-development-play.png" onclick="ciphEnter.play('development')" />
+            </div>
+            <div class="cb"></div>
+        </div>
+
         <div id="ciph-page">
             <h1>What is Ciph?</h1>
             <p>
@@ -207,6 +232,11 @@
         window.ciphUser = new CiphUser()
         window.ciphChat = new CiphChat()
         window.ciphBrowser = new CiphBrowser()
+        window.ciphEnter = new CiphEnter()
+    </script>
+
+    <script>
+
     </script>
 
 </body>

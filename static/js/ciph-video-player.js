@@ -5,21 +5,24 @@
 /* exports */
 window.CiphVideoPlayer = class CiphVideoPlayer {
 
-    constructor (videoElmId, videoUrl, browser) {
-        this.browser = browser
-        this.client = new CiphContainerClient(videoUrl)
-        this.videoElmId = videoElmId
+    constructor (args = {}) {
+        // require shaka player to be loaded
+        assert(window.shaka, 'shaka player not loaded')
+        // initialize video element
+        this.videoElmId = args.videoElmId || 'ciph-video'
         this.videoElm = document.getElementById(this.videoElmId)
-
-        // local storage key for storing playback status - set with unique id
-        // after head loads
+        assert(this.videoElm, 'invalid videoElmId')
+        // ciph browser object
+        this.browser = args.browser || window.ciphBrowser
+        // create new container client for link
+        this.client = new CiphContainerClient(args.link)
+        // resume from prior playack position (default true)
+        this.resume = args.resume === false ? false : true
+        // local storage key for storing playback status
         this.statusLocalStorageKey = ''
 
-        assert(window.shaka, 'shaka player not loaded')
-        assert(this.videoElm, 'invalid videoElmId')
-
+        // create new shaka player instance
         this.shaka = new shaka.Player(this.videoElm)
-
         // register request plugin - this is global
         shaka.net.NetworkingEngine.registerScheme('https', httpRequest, 99)
         // register request filter which is on the player instance
@@ -61,7 +64,7 @@ window.CiphVideoPlayer = class CiphVideoPlayer {
                 // check if status is set
                 const previousTime = localStorage.getItem(this.statusLocalStorageKey)
                 // if time is set then check if user wants to resume from previous
-                if (previousTime) {
+                if (this.resume && previousTime) {
                     const minutes = Math.floor(previousTime/60)
                         .toString().padStart(2, '0')
                     const seconds = Math.floor(previousTime - minutes * 60)
