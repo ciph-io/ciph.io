@@ -9,6 +9,8 @@ const MB = 1024*KB
 
 const secureLinkRegExp = /^\d-\d(-[0-9a-f]{32}){3}$/
 
+const blockRequests = {}
+
 const blockSizes = [ 4*KB, 16*KB, 64*KB, 256*KB, 1*MB, 4*MB, 16*MB ]
 
 const testBlockPath = '/get-proxy/0/5ff536a6d8d90bd3a561cd8440810b90.ciph'
@@ -359,12 +361,23 @@ window.CiphContainerClient = class CiphContainerClient {
      * @returns {Promise<ArrayBuffer>}
      */
     async getBlock (blockSize, blockId0, blockId1) {
-        const [data0, data1] = await Promise.all([
+        const blockRequestId = `${blockSize} ${blockId0} ${blockId1}`
+        // if request is already pending return promise for that request
+        if (defined(blockRequests[blockRequestId])) {
+            return blockRequests[blockRequestId]
+        }
+        // store promise when request in progress
+        blockRequests[blockRequestId] = Promise.all([
             this.getSubBlock(blockSize, blockId0),
             this.getSubBlock(blockSize, blockId1),
-        ])
-
-        return CiphUtil.xorBuffer(data0, data1)
+        ]).then(blocks => {
+            // clear request when complete
+            delete blockRequests[blockRequestId]
+            // resolve with XOR of blocks
+            return CiphUtil.xorBuffer(blocks[0], blocks[1])
+        })
+        // return promise that will be resolved with block data
+        return blockRequests[blockRequestId]
     }
 
     /**
