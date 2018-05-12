@@ -7,12 +7,9 @@
 const KB = 1024
 const MB = 1024*KB
 
-const hash32RegExp = /^[0-9a-f]{32}$/
-const hash64RegExp = /^[0-9a-f]{64}$/
 const secureLinkRegExp = /^\d-\d(-[0-9a-f]{32}){3}$/
 
 const blockSizes = [ 4*KB, 16*KB, 64*KB, 256*KB, 1*MB, 4*MB, 16*MB ]
-const contentTypes = ['collection', 'page', 'video', 'audio', 'image']
 
 const testBlockPath = '/get-proxy/0/5ff536a6d8d90bd3a561cd8440810b90.ciph'
 
@@ -63,7 +60,7 @@ window.CiphContainerClient = class CiphContainerClient {
 
     constructor (url, options = {}) {
         // validate and extract url components
-        this.parseUrl(url)
+        this.link = CiphUtil.parseLink(url)
         // encryption key for chat messages
         this.chatKeyBuffer = null
         // list of data blocks
@@ -450,6 +447,27 @@ window.CiphContainerClient = class CiphContainerClient {
     }
 
     /**
+     * @function getFileDataURI
+     *
+     * get file, convert to base64, return as data URI
+     *
+     * @param {string} fileName
+     *
+     * @returns {Promise<string>}
+     */
+    async getFileDataURI (fileName) {
+        fileName = decodeURI(fileName)
+        const file = this.findFile(fileName)
+        assert(file, 'file not found')
+        // get file data as buffer
+        const buffer = await this.getFile(fileName)
+        // get mime type from file data or guess
+        const mimeType = file.mimeType || CiphUtil.getMimeType(fileName)
+        // build data uri from mime type and base64 encoded data
+        return `data:${mimeType};base64,${CiphUtil.bufferToBase64(buffer)}`
+    }
+
+    /**
      * @function getHeadBlock
      *
      * get and validate head block
@@ -659,37 +677,6 @@ window.CiphContainerClient = class CiphContainerClient {
             // return true to show password prompt again
             return true
         }
-    }
-
-    /**
-     * @function parseUrl
-     *
-     * validate url and extract link from it
-     *
-     * @param {string} url
-     */
-    parseUrl (url) {
-        // remove any protocol from url
-        url = url.replace(/^\w+:\/\/(.*?\/enter\?ciph=)?/, '')
-        // split url into parts
-        const [blockSize, contentType, blockId0, blockId1, salt, password] = url.split('-')
-        // validate url
-        assert(defined(blockSizes[blockSize]), 'invalid block size')
-        assert(defined(contentTypes[contentType]), 'invalid content type')
-        assert(blockId0.match(hash32RegExp), 'invalid block id 0')
-        assert(blockId1.match(hash32RegExp), 'invalid block id 1')
-        assert(salt.match(hash32RegExp), 'invalid salt')
-        // set link
-        this.link = {
-            blockSize: parseInt(blockSize),
-            contentType: parseInt(contentType),
-            blockId0,
-            blockId1,
-            salt,
-            password,
-        }
-        // set true if password in url
-        this.link.passwordInUrl = defined(this.link.password)
     }
 
     static setProxyHost (setProxyHost) {

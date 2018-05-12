@@ -19,7 +19,6 @@ label {
 }
 
 img {
-    display: block;
     border: 0;
 }
 
@@ -63,6 +62,10 @@ h3 {
 
 #ciph-browser td:first-child {
     text-align: left;
+}
+
+#ciph-browser video {
+    width: 100%;
 }
 
 #ciph-chat {
@@ -167,6 +170,14 @@ h3 {
     text-decoration: none;
 }
 
+#ciph-page img {
+    max-width: 100%;
+}
+
+#ciph-page table {
+    width: 100%;
+}
+
 #ciph-user {
     color: #c2c2c2;
     float: left;
@@ -176,10 +187,6 @@ h3 {
 #ciph-user a {
     cursor: pointer;
     font-weight: bold;
-}
-
-#ciph-video {
-    width: 100%;
 }
 
 #video-playlist .playlist-item {

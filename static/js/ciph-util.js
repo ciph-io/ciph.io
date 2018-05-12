@@ -19,16 +19,31 @@ window.el = document.getElementById.bind(document)
 /* local globals */
 
 const MD = markdownit().disable(['image'])
+const MDImages = markdownit()
 
+const KB = 1024
+const MB = 1024*KB
+
+const blockSizes = [ 4*KB, 16*KB, 64*KB, 256*KB, 1*MB, 4*MB, 16*MB ]
 const ciphLinkRegExp = /^ciph:\/\//
 const ciphLinksRegExp = /\b(https|ciph):\/\/.*?\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}[^\s]*/g
 const ciphLinkExtractRegExp = /^.*?(\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}.*)/
 const contentTypeNames = ['Collection', 'Page', 'Video', 'Audio', 'Image']
+const contentTypes = ['collection', 'page', 'video', 'audio', 'image']
+const hash32RegExp = /^[0-9a-f]{32}$/
 const httpCiphLinkRegExp = /#\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}/
 
 const linkClickHandlers = {
     chat: function (ev) { window.ciphBrowser.open(ev.target.href, ev, 'chat') },
     page: function (ev) { window.ciphBrowser.open(ev.target.href, ev, 'page') },
+}
+
+const defaultMimeType = 'application/octet-stream'
+const mimeTypes = {
+    gif: 'image/gif',
+    jpeg: 'image/jpeg',
+    jpg: 'image/jpeg',
+    png: 'image/png',
 }
 
 window.CiphUtil = class CiphUtil {
@@ -72,6 +87,15 @@ window.CiphUtil = class CiphUtil {
         return buffer
     }
 
+    static bufferToBase64 (buffer) {
+        let binary = ''
+        const arr = new Uint8Array(buffer)
+        for (const byte of arr) {
+            binary += String.fromCharCode(byte)
+        }
+        return btoa(binary)
+    }
+
     static bufferToHex (buffer) {
         const arr = new Uint8Array(buffer)
         let hex = ''
@@ -98,6 +122,10 @@ window.CiphUtil = class CiphUtil {
         }
 
         return true
+    }
+
+    static bufferToString (buffer) {
+        return new TextDecoder().decode(buffer)
     }
 
     static async deriveKey (password, salt) {
@@ -137,7 +165,7 @@ window.CiphUtil = class CiphUtil {
         return arr[Math.floor(Math.random() * arr.length)]
     }
 
-    static domFromMarkdown (markdown, source, pre = '<div>', post = '</div>') {
+    static domFromMarkdown (markdown, source, pre = '<div>', post = '</div>', images) {
         // require valid source
         assert(defined(linkClickHandlers[source]), `invalid source ${source}`)
         // it data is a single link and does not contain link formatting then
@@ -156,15 +184,14 @@ window.CiphUtil = class CiphUtil {
                 }
             }
         }
+        // render markdown to html
+        const html = images ? MDImages.render(markdown) : MD.render(markdown)
         // create new dom fragment from markdown rendered as html
         const dom = new DOMParser().parseFromString(
-            pre + MD.render(markdown) + post,
+            pre + html + post,
             'text/html'
         )
-        // get all links - copy to array because collection changes with dom
-        const col = dom.getElementsByTagName('a')
-        const links = []
-        for (let i=0; i < col.length; i++) links.push(col[i])
+        const links = CiphUtil.getElements(dom, 'a')
         // remove outbound links and open ciph links with JS
         for (let i=0; i < links.length; i++) {
             const link = links[i]
@@ -181,6 +208,117 @@ window.CiphUtil = class CiphUtil {
         }
         // return container div
         return dom.getElementsByTagName('div')[0]
+    }
+
+    static getElements (dom, tagName) {
+        const collection = dom.getElementsByTagName(tagName)
+        const elements = []
+        // copy elements from live collection to array
+        for (let i=0; i < collection.length; i++) {
+            elements.push(collection[i])
+        }
+
+        return elements
+    }
+
+    static getMimeType (fileName) {
+        const matches = fileName.match(/\.(\w+)$/)
+        if (!matches) {
+            return defaultMimeType
+        }
+
+        const ext = matches[1].toLowerCase()
+
+        return mimeTypes[ext] || defaultMimeType
+    }
+
+    static loadMedia (dom, viewer) {
+        // get all image tags - these may be images or other types of media
+        const elements = CiphUtil.getElements(dom, 'img')
+
+        for (const element of elements) {
+            // get src of image
+            const src = element.getAttribute('src')
+            // if link is to ciph content then load if valid
+            if (src.match(ciphLinksRegExp)) {
+                try {
+                    const link = CiphUtil.parseLink(src)
+                    // currently only video supported
+                    if (link.contentType !== 2) {
+                        console.log(`invalid content type for media src ${src}`)
+                        continue
+                    }
+                    // get number of video within collection
+                    const videoNum = viewer.videos.length
+                    // create unique id for video elm
+                    const videoElmId = `ciph-video-${videoNum}`
+                    // create new video element that will replace img
+                    const videoElm = ce('video')
+                    videoElm.id = videoElmId
+                    videoElm.setAttribute('controls', true)
+                    // replace img element with video
+                    element.parentNode.replaceChild(videoElm, element)
+                    // args for new video player
+                    const playerArgs = {
+                        browser: viewer.browser,
+                        link: src,
+                        videoElm: videoElm,
+                        videoElmId: videoElmId,
+                    }
+                    // only allow resume/autoplay on first video
+                    if (videoNum > 0) {
+                        playerArgs.autoplay = false
+                        playerArgs.resume = false
+                    }
+                    // create new video player
+                    const player = new CiphVideoPlayer(playerArgs)
+                    // add video to list in viewer
+                    viewer.videos.push(player)
+                }
+                catch (err) {
+                    console.error(err)
+                }
+            }
+            // any other link must be plain file
+            else if (src.includes('/')) {
+                console.error(`invalid media src ${src}`)
+            }
+            // otherwise should be file in container
+            else {
+                // set empty image till loaded
+                element.setAttribute('src', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==')
+                // image file must be in container
+                viewer.client.getFileDataURI(src).then(dataURI => {
+                    element.setAttribute('src', dataURI)
+                })
+            }
+        }
+    }
+
+    static parseLink (url) {
+        // remove any protocol from url
+        url = url.replace(/^\w+:\/\/([^#]+#)?/, '')
+        // split url into parts
+        const [blockSize, contentType, blockId0, blockId1, salt, password] = url.split('-')
+        // validate url
+        assert(defined(blockSizes[blockSize]), 'invalid block size')
+        assert(defined(contentTypes[contentType]), 'invalid content type')
+        assert(blockId0.match(hash32RegExp), 'invalid block id 0')
+        assert(blockId1.match(hash32RegExp), 'invalid block id 1')
+        assert(salt.match(hash32RegExp), 'invalid salt')
+        // set link
+        const link = {
+            blockSize: parseInt(blockSize),
+            contentType: parseInt(contentType),
+            blockId0,
+            blockId1,
+            salt,
+            password,
+        }
+        // set true if password in url
+        link.passwordInUrl = defined(link.password)
+
+        return link
     }
 
     static async sha256 (data, encoding, length) {

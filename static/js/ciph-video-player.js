@@ -10,8 +10,9 @@ window.CiphVideoPlayer = class CiphVideoPlayer {
         assert(window.shaka, 'shaka player not loaded')
         // initialize video element
         this.videoElmId = args.videoElmId || 'ciph-video'
-        this.videoElm = document.getElementById(this.videoElmId)
-        assert(this.videoElm, 'invalid videoElmId')
+        this.videoElm = args.videoElm || document.getElementById(this.videoElmId)
+        // override autoplay setting
+        this.autoplay = args.autoplay
         // ciph browser object
         this.browser = args.browser || window.ciphBrowser
         // create new container client for link
@@ -38,19 +39,15 @@ window.CiphVideoPlayer = class CiphVideoPlayer {
                 bufferingGoal: 20,
                 rebufferingGoal: 10,
             }
-        });
+        })
 
         // wait for head to load
-        this.client.head.promise.then(async () => {
+        this.renderPromise = this.client.head.promise.then(async () => {
             // local storage key for playback status
             this.statusLocalStorageKey = `${this.client.publicId}-status`
             // get mpeg dash index file
             const mpd = this.client.findFile(/\.mpd$/)
             assert(mpd, 'mpeg-dash index file not found')
-            // add title to page if defined
-            if (this.client.meta && this.client.meta.title) {
-                this.browser.setTitle(this.client.meta.title)
-            }
             // start shaka player with mpeg-dash index file
             await this.shaka.load(mpd.name).catch(onError)
             // add subtitle files
@@ -74,8 +71,10 @@ window.CiphVideoPlayer = class CiphVideoPlayer {
                     }
                     localStorage.removeItem(this.statusLocalStorageKey)
                 }
-                // play video
-                this.videoElm.play()
+                // play video unless autoplay disabled
+                if (this.autoplay !== false) {
+                    this.videoElm.play()
+                }
             })
             // add event handler to pause video when tab hidden
             document.addEventListener('visibilitychange', () => {

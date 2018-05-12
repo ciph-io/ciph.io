@@ -129,16 +129,30 @@ window.CiphBrowser = class CiphBrowser {
         // render content type
         switch (contentType) {
             case 'collection':
-                return this.renderCollection()
+                this.renderCollection()
+                break
             case 'page':
-                return this.renderPage()
+                this.renderPage()
+                break
             case 'video':
-                return this.renderVideo()
+                this.renderVideo()
+                break
             case 'audio':
-                return this.renderAudio()
+                this.renderAudio()
+                break
             case 'image':
-                return this.renderImage()
+                this.renderImage()
+                break
+            default:
+                throw new Error(`invalid content type ${contentType}`)
         }
+        // wait for active content to render
+        this.active.renderPromise.then(() => {
+            if (this.active.client.meta.title) {
+                const onPage = !(this.active.markdown && this.active.markdown.match(/^#[^#]/m))
+                this.setTitle(this.active.client.meta.title, onPage)
+            }
+        })
     }
 
     renderAudio () {
@@ -146,7 +160,22 @@ window.CiphBrowser = class CiphBrowser {
     }
 
     renderCollection () {
-        assert(false, 'collection not yet supported')
+        // create page container
+        this.elm.innerHTML = `<div id="ciph-page"></div>`
+        // create page viewer
+        this.active = new CiphCollectionViewer({
+            browser: this,
+            link: this.activeLink,
+        })
+        // after render restore scroll
+        this.active.renderPromise.then(() => {
+            if (scrollOffsets[location.hash]) {
+                window.scrollTo(0, scrollOffsets[location.hash])
+            }
+            else {
+                window.scrollTo(0, 0)
+            }
+        })
     }
 
     renderImage () {
@@ -157,7 +186,10 @@ window.CiphBrowser = class CiphBrowser {
         // create page container
         this.elm.innerHTML = `<div id="ciph-page"></div>`
         // create page viewer
-        this.active = new CiphPageViewer('ciph-page', this.activeLink)
+        this.active = new CiphPageViewer({
+            browser: this,
+            link: this.activeLink,
+        })
         // after render restore scroll
         this.active.renderPromise.then(() => {
             if (scrollOffsets[location.hash]) {
@@ -174,7 +206,8 @@ window.CiphBrowser = class CiphBrowser {
         this.elm.innerHTML = `<video id="ciph-video" controls></video>`
         // create video player
         this.active = new CiphVideoPlayer({
-            link: this.activeLink
+            browser: this,
+            link: this.activeLink,
         })
         // always scroll to top
         window.scrollTo(0, 0)

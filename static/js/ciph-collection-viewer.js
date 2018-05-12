@@ -3,7 +3,7 @@
 'use strict'
 
 /* exports */
-window.CiphPageViewer = class CiphPageViewer {
+window.CiphCollectionViewer = class CiphCollectionViewer {
 
     constructor (args = {}) {
         assert(window.markdownit, 'markdownit not loaded')
@@ -18,14 +18,19 @@ window.CiphPageViewer = class CiphPageViewer {
         // markdown index file loaded with container
         this.markdown = ''
         // wait for head to load
-        this.renderPromise = this.client.head.promise.then(() => {
+        this.renderPromise = this.client.head.promise.then(async () => {
             // do not continue if canceled
-            if (this.canceled) return
-            // get page markdown
-            this.markdown = this.client.getPage()
-            // render page html to element
+            if (this.canceled) {
+                return
+            }
+            this.markdown = await this.client.getFile(this.client.meta.index)
+            if (typeof this.markdown !== 'string') {
+                this.markdown = CiphUtil.bufferToString(this.markdown)
+            }
             this.render()
         }).catch(console.error)
+        // list of embedded videos
+        this.videos = []
     }
 
     cancel () {
@@ -34,7 +39,9 @@ window.CiphPageViewer = class CiphPageViewer {
 
     render () {
         // render dom from markdown
-        const dom = CiphUtil.domFromMarkdown(this.markdown, 'page', `<div id="${this.pageElmId}">`, '</div>')
+        const dom = CiphUtil.domFromMarkdown(this.markdown, 'page', `<div id="${this.pageElmId}">`, '</div>', true)
+        // load media referenced in dom
+        CiphUtil.loadMedia(dom, this)
         // replace existing page
         this.pageElm.parentNode.replaceChild(dom, this.pageElm)
         // update reference to element
