@@ -44,6 +44,7 @@ const mimeTypes = {
     jpeg: 'image/jpeg',
     jpg: 'image/jpeg',
     png: 'image/png',
+    webp: 'image/webp',
 }
 
 window.CiphUtil = class CiphUtil {
