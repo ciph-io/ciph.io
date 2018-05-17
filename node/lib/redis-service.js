@@ -427,11 +427,11 @@ class RedisService {
      * @returns {Promise<null|string>}
      */
     static async giveReferralCredit (anonId, userId) {
-        const res = await RedisService.getClient('anonReferralCredit').setnx(anonId, 1)
-        // if anon (ip) has not gotten credit before then give credit to user
-        if (res === 1) {
+        const anonCredit = await RedisService.getAnonCredit(anonId)
+        // if anon (ip) has not gotten credit before then give referral credit
+        if (anonCredit === null) {
             await Promise.all([
-                RedisService.incrAnonCredit(anonId, 10*(1024**3)),
+                RedisService.setAnonCredit(anonId, 20*(1024**3)),
                 RedisService.incrUserCredit(userId, 10*(1024**3))
             ])
         }
