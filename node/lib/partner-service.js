@@ -24,6 +24,10 @@ module.exports = class PartnerService {
         }
         // get current time
         const time = Date.now()
+        // do not record time if user has no credit left
+        if (!user.token) {
+            return
+        }
         // get time of last request
         const lastRequest = user.token.type === 'anon'
             ? await RedisService.getSetAnonLastRequest(user.anonId, time)
