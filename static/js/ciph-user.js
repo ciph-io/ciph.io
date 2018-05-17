@@ -261,13 +261,13 @@ window.CiphUser = class CiphUser {
         el('ciph-logout').addEventListener('click', () => this.logout())
 
         const registerBlock = el('register-block')
-        if (registerBlock) {
-            registerBlock.parentNode.removeChild(registerBlock)
-            el('referral-link').innerHTML = `
-                Give your friends this referral link:<br />
-                <a href="https://${location.host}/r?u=${this.data.userId}">https://${location.host}/r?u=${this.data.userId}</a>
-            `
+        if (!registerBlock.classList.contains('hide')) {
+            registerBlock.classList.add('hide')
         }
+        el('referral-link').innerHTML = `
+            Give your friends this referral link:<br />
+            <a href="https://${location.host}/r?u=${this.data.userId}">https://${location.host}/r?u=${this.data.userId}</a>
+        `
     }
 
     renderLoggedOut () {
@@ -279,6 +279,18 @@ window.CiphUser = class CiphUser {
         `
         el('ciph-login').addEventListener('click', () => this.renderLogin())
         el('ciph-register').addEventListener('click', () => this.renderRegister())
+
+        const registerBlock = el('register-block')
+        if (registerBlock.classList.contains('hide')) {
+            registerBlock.classList.remove('hide')
+        }
+        el('referral-link').innerHTML = `
+            You must
+            <a onclick="ciphUser.renderLogin()" class="pointer">Log In</a>
+            or
+            <a onclick="ciphUser.renderRegister()" class="pointer">Register</a>
+            too get your custom referral link.
+        `
     }
 
     renderRegister () {
