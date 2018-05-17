@@ -92,5 +92,15 @@
         "host": "localhost",
         "port": "6379",
         "db": "18"
+    },
+    "anonRegisterCredit": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "19"
+    },
+    "anonReferralCredit": {
+        "host": "localhost",
+        "port": "6379",
+        "db": "20"
     }
 }

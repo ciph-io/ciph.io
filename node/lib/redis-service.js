@@ -399,6 +399,45 @@ class RedisService {
     }
 
     /**
+     * @function giveAnonRegisterCredit
+     *
+     * give anon free credit for register if they qualify
+     *
+     * @param {string} anonId
+     * @param {string} userId
+     *
+     * @returns {Promise<null|string>}
+     */
+    static async giveAnonRegisterCredit (anonId, userId) {
+        const res = await RedisService.getClient('anonRegisterCredit').setnx(anonId, 1)
+        // if anon (ip) has not gotten credit before then give credit to user
+        if (res === 1) {
+            await RedisService.incrUserCredit(userId, 10*(1024**3))
+        }
+    }
+
+    /**
+     * @function giveReferralCredit
+     *
+     * give referral credit to anon and referring user if qualified
+     *
+     * @param {string} anonId
+     * @param {string} userId
+     *
+     * @returns {Promise<null|string>}
+     */
+    static async giveReferralCredit (anonId, userId) {
+        const res = await RedisService.getClient('anonReferralCredit').setnx(anonId, 1)
+        // if anon (ip) has not gotten credit before then give credit to user
+        if (res === 1) {
+            await Promise.all([
+                RedisService.incrAnonCredit(anonId, 10*(1024**3)),
+                RedisService.incrUserCredit(userId, 10*(1024**3))
+            ])
+        }
+    }
+
+    /**
      * @function incrAnonBlockCount
      *
      * increment block count for anon id (ip)
@@ -409,6 +448,20 @@ class RedisService {
      */
     static async incrAnonBlockCount (anonId) {
         return RedisService.getClient('anonBlockCount').incr(anonId)
+    }
+
+    /**
+     * @function incrAnonCredit
+     *
+     * increment credit for anon id (ip)
+     *
+     * @param {string} anonId
+     * @param {integer|string} amount
+     *
+     * @returns {Promise<string>}
+     */
+    static async incrAnonCredit (anonId, amount) {
+        return RedisService.getClient('anonCredit').incrby(anonId, amount)
     }
 
     /**
@@ -441,6 +494,20 @@ class RedisService {
      */
     static async incrConnectionCount () {
         return RedisService.getClient('chat').incr('connection-count')
+    }
+
+    /**
+     * @function incrUserCredit
+     *
+     * increment credit for user id
+     *
+     * @param {string} userId
+     * @param {integer|string} amount
+     *
+     * @returns {Promise<string>}
+     */
+    static async incrUserCredit (userId, amount) {
+        return RedisService.getClient('userCredit').incrby(userId, amount)
     }
 
     /**

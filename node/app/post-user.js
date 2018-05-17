@@ -7,5 +7,11 @@ const UserService = require('../lib/user-service')
 module.exports = postUser
 
 async function postUser (req, res) {
-    res.json( await UserService.createUser(req.body.userId, req.body.secret) )
+    res.json(
+        await UserService.createUser(
+            req.headers['x-real-ip'],
+            req.body.userId,
+            req.body.secret
+        )
+    )
 }

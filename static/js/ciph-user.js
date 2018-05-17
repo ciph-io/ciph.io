@@ -259,6 +259,15 @@ window.CiphUser = class CiphUser {
             <a id="ciph-logout">Logout</a>
         `
         el('ciph-logout').addEventListener('click', () => this.logout())
+
+        const registerBlock = el('register-block')
+        if (registerBlock) {
+            registerBlock.parentNode.removeChild(registerBlock)
+            el('referral-link').innerHTML = `
+                Give your friends this referral link:<br />
+                <a href="https://${location.host}/r?u=${this.data.userId}">https://${location.host}/r?u=${this.data.userId}</a>
+            `
+        }
     }
 
     renderLoggedOut () {

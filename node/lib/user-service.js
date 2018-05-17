@@ -22,12 +22,14 @@ module.exports = class UserService {
      * create user. userId and secret are optional and random values will be
      * generated if they are not provided.
      *
+     * @param {string} ip
      * @param {string} userId
      * @param {string} secret
      *
      * @returns {Promise<object>}
      */
-    static async createUser (userId, secret) {
+    static async createUser (ip, userId, secret) {
+        const anonId = UserService.getAnonId(ip)
         // get valid user id
         if (defined(userId)) {
             assert(UserService.isValidUserId(userId), 'invalid userId')
@@ -46,6 +48,8 @@ module.exports = class UserService {
         }
         // create user - throws on error
         await RedisService.createUser(userId, secret)
+        // give register credit if anon qualifies - ignore errors
+        await RedisService.giveAnonRegisterCredit(anonId, userId).catch(console.error)
         // return created user details
         return { userId, secret }
     }
