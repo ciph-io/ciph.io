@@ -573,8 +573,8 @@ window.CiphContainerClient = class CiphContainerClient {
         const url = this.link.passwordInUrl
             ? `/enter#${replace}-${this.link.password}`
             : `/enter#${replace}`
-        // add new url to history
-        history.pushState({}, '', url)
+        // replace old url with new url in history
+        history.replaceState({}, '', url)
     }
 
     /**

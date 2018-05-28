@@ -176,6 +176,7 @@ h3 {
 
 #ciph-page table {
     width: 100%;
+    table-layout: fixed;
 }
 
 #ciph-user {
