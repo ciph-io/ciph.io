@@ -281,16 +281,20 @@ window.CiphUser = class CiphUser {
         el('ciph-register').addEventListener('click', () => this.renderRegister())
 
         const registerBlock = el('register-block')
-        if (registerBlock.classList.contains('hide')) {
+        if (registerBlock && registerBlock.classList.contains('hide')) {
             registerBlock.classList.remove('hide')
         }
-        el('referral-link').innerHTML = `
-            You must
-            <a onclick="ciphUser.renderLogin()" class="pointer">Log In</a>
-            or
-            <a onclick="ciphUser.renderRegister()" class="pointer">Register</a>
-            too get your custom referral link.
-        `
+
+        const referralLink = el('referral-link')
+        if (referralLink) {
+            referralLink.innerHTML = `
+                You must
+                <a onclick="ciphUser.renderLogin()" class="pointer">Log In</a>
+                or
+                <a onclick="ciphUser.renderRegister()" class="pointer">Register</a>
+                too get your custom referral link.
+            `
+        }
     }
 
     renderRegister () {
