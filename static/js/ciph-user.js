@@ -261,13 +261,39 @@ window.CiphUser = class CiphUser {
         el('ciph-logout').addEventListener('click', () => this.logout())
 
         const registerBlock = el('register-block')
-        if (!registerBlock.classList.contains('hide')) {
+        if (registerBlock && !registerBlock.classList.contains('hide')) {
             registerBlock.classList.add('hide')
         }
-        el('referral-link').innerHTML = `
-            Give your friends this referral link:<br />
-            <a href="https://${location.host}/r?u=${this.data.userId}">https://${location.host}/r?u=${this.data.userId}</a>
-        `
+
+        const referralLink = el('referral-link')
+        if (referralLink) {
+            referralLink.innerHTML = `
+                Give your friends this referral link:<br />
+                <a href="https://${location.host}/r?u=${this.data.userId}">https://${location.host}/r?u=${this.data.userId}</a>
+            `
+        }
+
+        const monero = el('monero')
+        if (monero) {
+            monero.innerHTML = `
+                To buy Ciph credit transfer XMR to address:<br /><br />
+                <span style="color: #00CB3A">
+                48VK1PZGNSugGJN3EFKqBEQ52KA3PFNL1F4RfMNV317Dj1Ua69pC7GSDa9KXH9qKfHctAfdWLHbc4D2r1wFqh8QmG2PGCJR
+                </span>
+                <br /><br />
+                With payment id:<br /><br />
+                <span style="color: #00CB3A">
+                ${this.data.userId + '0'.repeat(32)}
+                </span>
+                <br /><br />
+                You can buy any amount at the rate of 1XMR per 10TB credit. For instance: 500GB would
+                be 0.05XMR and 1TB would be 0.1XMR.
+                <br /><br />
+                Credit should be added to your account as soon as the amount is available in our wallet.
+                If you have any issues please contact:
+                <a href="mailto:monero@vida.do">monero@vida.do</a>
+            `
+        }
     }
 
     renderLoggedOut () {
@@ -293,6 +319,17 @@ window.CiphUser = class CiphUser {
                 or
                 <a onclick="ciphUser.renderRegister()" class="pointer">Register</a>
                 too get your custom referral link.
+            `
+        }
+
+        const monero = el('monero')
+        if (monero) {
+            monero.innerHTML = `
+                You must
+                <a onclick="ciphUser.renderLogin()" class="pointer">Log In</a>
+                or
+                <a onclick="ciphUser.renderRegister()" class="pointer">Register</a>
+                too buy credit with monero.
             `
         }
     }
