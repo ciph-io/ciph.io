@@ -29,13 +29,57 @@ const env = location.host === 'dev.ciph.io' ? 'dev' : 'prod'
 /* exports */
 window.CiphEnter = class CiphEnter {
 
-    constructor () {
+    constructor (args = {}) {
         // set with player object when playing
         this.active = null
+        // ciph browser object
+        this.browser = args.browser || window.ciphBrowser
         // if there is no link then show intro video
-        if (!location.hash) {
+        if (!location.hash && el('ciph-video')) {
             this.play('freeCredit')
         }
+        // add event listener for link form
+        const enterLink = el('enter-link')
+        if (enterLink) {
+            enterLink.addEventListener('submit', this.enterLink.bind(this))
+        }
+        // add event listener for link file
+        const enterLinkFile = el('enter-link-file')
+        if (enterLinkFile) {
+            enterLinkFile.addEventListener('change', this.enterLinkFile.bind(this))
+        }
+    }
+
+    enterLink (ev) {
+        this.browser.open(el('enter-link-input').value, ev)
+    }
+
+    enterLinkFile (ev) {
+        // require qrcode reader to be loaded
+        if (typeof qrcode === 'undefined') {
+            alert('qrcode reader not loaded')
+            return
+        }
+        // set callback to execute when qrcode decode complete
+        qrcode.callback = this.enterLinkFileCallback.bind(this)
+        // create file reader to load file
+        const fileReader = new FileReader()
+        // decode file once loaded
+        fileReader.onload = (ev) => {
+            qrcode.decode(ev.target.result)
+        }
+        // load image file as data url
+        fileReader.readAsDataURL(ev.target.files[0])
+    }
+
+    enterLinkFileCallback (result) {
+        // alert on errors
+        if (result === 'error decoding QR Code' || result === 'Failed to load the image') {
+            alert('Failed to read QR code')
+            return
+        }
+        // attempt to load result as ciph link
+        this.browser.open(result)
     }
 
     async play (name) {

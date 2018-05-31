@@ -34,6 +34,63 @@ h3 {
     color: #7F0000;
 }
 
+#enter-link label {
+    color: #00CB3A;
+    font-weight: bold;
+    font-size: 24px;
+}
+
+#enter-link input {
+    border: 0;
+    font-size: 24px;
+    padding: 4px;
+}
+
+#enter-link button {
+    background-color: white;
+    font-size: 24px;
+    padding: 4px;
+    font-weight: bold;
+    border: 0;
+    border-radius: 4px;
+    color: #00CB3A;
+}
+
+#ciph-share {
+    clear: both;
+    text-align: right;
+    margin: auto;
+    max-width: 1000px;
+}
+
+#share-qrcode {
+    margin-top: 10px;
+}
+
+#share-qrcode a {
+    color: #00CB3A;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#share-qrcode img {
+    padding: 4px;
+}
+
+#share-qrcode label {
+    color: #00CB3A;
+}
+
+#share-qrcode input[type=file] {
+    max-width: 140px;
+}
+
+#share-link {
+    color: #00CB3A;
+    cursor: pointer;
+    font-weight: bold;
+}
+
 #unsupported-browser {
     position: fixed;
     top: 0; left: 0;

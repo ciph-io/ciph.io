@@ -14,8 +14,30 @@ window.addEventListener('scroll', () => {
 })
 // add event listener for url change
 window.addEventListener('popstate', () => {
-    if (window.ciphBrowser) {
-        ciphBrowser.open(location.hash)
+    // hide share when opening new link
+    if (window.ciphShare) {
+        window.ciphShare.hideQRCode()
+    }
+
+    if (location.hash) {
+        if (window.ciphBrowser) {
+            ciphBrowser.open(location.hash)
+        }
+    }
+    else {
+        el('ciph-browser').innerHTML = `
+            <h1>Enter a Link or QR code</h1>
+
+            <form id="enter-link">
+                <label>Enter Link</label>
+                <input type="text" id="enter-link-input" />
+                <button type="submit">GO</button>
+                <br /><br />
+                <label for="enter-link-file">Load QR code from image file</label>
+                <input type="file" id="enter-link-file" />
+            </form>
+        `
+        window.ciphEnter = new window.CiphEnter()
     }
 })
 
@@ -36,6 +58,7 @@ window.CiphBrowser = class CiphBrowser {
         // set user and chat client
         this.chat = args.chat || window.ciphChat
         this.partner = args.partner || window.ciphPartner
+        this.share = args.share || window.ciphShare
         this.user = args.user || window.ciphUser
         // get ciph link from url
         this.open(location.hash)
@@ -45,6 +68,8 @@ window.CiphBrowser = class CiphBrowser {
         if (ev) {
             ev.preventDefault()
         }
+        // hide share when opening new link
+        this.share.hideQRCode()
         // parse different link formats
         link = this.parseLink(link)
         // if click is from page then set active user id as referrer
@@ -91,7 +116,7 @@ window.CiphBrowser = class CiphBrowser {
         }
         // if link starts with digit then add hash
         if (orig.match(/^\d/)) {
-            link.hash = '#'+link
+            link.hash = '#'+orig
         }
         else if (orig.match(/^ciph:\/\//)) {
             link.hash = '#'+orig.replace(/^ciph:\/\//, '')

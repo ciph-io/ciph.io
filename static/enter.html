@@ -18,6 +18,8 @@
     
     <link rel="stylesheet" href="/css/ciph.css" />
 
+    <script src="/js/llqrcode.js"></script>
+    <script src="/js/qrcode.js"></script>
     <script src="/js/markdown-it.min.js"></script>
     <script src="/js/shaka-player.compiled.js"></script>
     <script src="/js/inflate.js"></script>
@@ -30,6 +32,7 @@
     <script src="/js/ciph-enter.js"></script>
     <script src="/js/ciph-page-viewer.js"></script>
     <script src="/js/ciph-partner.js"></script>
+    <script src="/js/ciph-share.js"></script>
     <script src="/js/ciph-user.js"></script>
     <script src="/js/ciph-video-player.js"></script>
 
@@ -72,7 +75,35 @@
         </a>
     </div>
 
+    <div id="ciph-share">
+        <a id="share-link" onclick="ciphShare.shareQRCode()">Share QR Code+</a>
+        <div id="share-qrcode" class="hide">
+            <canvas id="share-qrcode-canvas" class="hide"></canvas>
+            <label>Right click and save to share</label>
+            <br />
+            <img id="share-qrcode-final-image" />
+            <br />
+            <label for="share-qrcode-image">Add QR code to Image</label>
+            <input type="file" id="share-qrcode-image" onchange="ciphShare.renderQRCode()" />
+            <br />
+            <a onclick="ciphShare.hideQRCode()">Hide</a>
+        </div>
+    </div>
+
     <div id="ciph-browser">
+        <h1>Enter a Link or QR code</h1>
+
+        <form id="enter-link">
+            <label>Enter Link</label>
+            <input type="text" id="enter-link-input" />
+            <button type="submit">GO</button>
+            <br /><br />
+            <label for="enter-link-file">Load QR code from image file</label>
+            <input type="file" id="enter-link-file" />
+        </form>
+
+        <h1>Now Playing</h1>
+
         <video id="ciph-video" controls autoplay></video>
 
         <div id="video-playlist">
@@ -305,6 +336,7 @@
         window.ciphPartner = new CiphPartner()
         window.ciphUser = new CiphUser()
         window.ciphChat = new CiphChat()
+        window.ciphShare = new CiphShare()
         window.ciphBrowser = new CiphBrowser()
         window.ciphEnter = new CiphEnter()
     </script>
