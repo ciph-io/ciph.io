@@ -83,15 +83,10 @@ window.CiphShare = class CiphShare {
                 // real height and width of video
                 let height = video.videoHeight
                 let width = video.videoWidth
-                // set max width of 1000
-                if (width > 1000) {
+                // set width to 1000
+                if (width != 1000) {
                     height = height * (1000 / width)
                     width = 1000
-                }
-                // set min width of 64
-                if (width < 640) {
-                    height = height * (640 / width)
-                    width = 640
                 }
                 // resize canvas to fit image
                 if (height > 240) {
