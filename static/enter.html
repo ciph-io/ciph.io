@@ -86,7 +86,7 @@
             <label for="share-qrcode-image">Add QR code to Image</label>
             <input type="file" id="share-qrcode-image" onchange="ciphShare.renderQRCode()" />
             <br />
-            <a onclick="ciphShare.hideQRCode()">Hide</a>
+            <a onclick="ciphShare.renderQRCode({fromVideo: true})">Add QR code to Video Frame -</a> <a onclick="ciphShare.hideQRCode()">Hide</a>
         </div>
     </div>
 

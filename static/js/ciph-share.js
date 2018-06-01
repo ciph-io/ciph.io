@@ -63,36 +63,77 @@ window.CiphShare = class CiphShare {
         })
     }
 
-    async renderQRCode () {
+    async renderQRCode (args = {}) {
         const canvas = el('share-qrcode-canvas')
         canvas.setAttribute('height', '240')
         canvas.setAttribute('width', '220')
+        // set to true to save as jpeg
+        let saveJpeg = false
         // get cavas context
         const ctx = canvas.getContext('2d')
         // set offsets for qrcode - will be changed if image loaded
         let qrcodeOffsetTop = 0
         let qrcodeOffsetLeft = 0
-        // load image from file input if any
-        const baseImage = await this.loadImage()        
-        if (baseImage) {
-            let height = baseImage.height
-            let width = baseImage.width
-            // set max width of a 1000
-            if (width > 1000) {
-                height = height * (1000 / width)
-                width = 1000
+        // pull base image from video
+        if (args.fromVideo) {
+            const video = el('ciph-video')
+            if (video) {
+                // always save video as jpeg
+                saveJpeg = true
+                // real height and width of video
+                let height = video.videoHeight
+                let width = video.videoWidth
+                // set max width of 1000
+                if (width > 1000) {
+                    height = height * (1000 / width)
+                    width = 1000
+                }
+                // set min width of 64
+                if (width < 640) {
+                    height = height * (640 / width)
+                    width = 640
+                }
+                // resize canvas to fit image
+                if (height > 240) {
+                    qrcodeOffsetTop = height - 240
+                    canvas.setAttribute('height', height)
+                }
+                if (width > 220) {
+                    qrcodeOffsetLeft = width - 220
+                    canvas.setAttribute('width', width)
+                }
+                // draw image
+                ctx.drawImage(video, 0, 0, width, height)
             }
-            // resize canvas to fit image
-            if (height > 240) {
-                qrcodeOffsetTop = height - 240
-                canvas.setAttribute('height', height)
+        }
+        // pull base image from file
+        else {
+            // load image from file input if any
+            const baseImage = await this.loadImage()
+            if (baseImage) {
+                // if input file is jpeg also save as jpeg
+                if (baseImage.src.match(/^data:image\/jpeg/)) {
+                    saveJpeg = true
+                }
+                let height = baseImage.height
+                let width = baseImage.width
+                // set max width of a 1000
+                if (width > 1000) {
+                    height = height * (1000 / width)
+                    width = 1000
+                }
+                // resize canvas to fit image
+                if (height > 240) {
+                    qrcodeOffsetTop = height - 240
+                    canvas.setAttribute('height', height)
+                }
+                if (width > 220) {
+                    qrcodeOffsetLeft = width - 220
+                    canvas.setAttribute('width', width)
+                }
+                // draw image
+                ctx.drawImage(baseImage, 0, 0, width, height)
             }
-            if (width > 220) {
-                qrcodeOffsetLeft = width - 220
-                canvas.setAttribute('width', width)
-            }
-            // draw image
-            ctx.drawImage(baseImage, 0, 0, width, height)
         }
         // draw white background for qrcode
         ctx.fillStyle = 'white'
@@ -103,7 +144,7 @@ window.CiphShare = class CiphShare {
         ctx.drawImage(this.tagImage, qrcodeOffsetLeft, qrcodeOffsetTop+210)
 
         // render as jpg if base image is jpg
-        if (baseImage && baseImage.src.match(/^data:image\/jpeg/)) {
+        if (saveJpeg) {
             el('share-qrcode-final-image').src = canvas.toDataURL('image/jpeg', 0.7)
         }
         else {
@@ -124,6 +165,12 @@ window.CiphShare = class CiphShare {
     }
 
     showQRCode () {
+        // get video element if any
+        const video = el('ciph-video')
+        if (video) {
+
+        }
+        // show
         el('share-qrcode').classList.remove('hide')
         this.qrcodeVisible = true
     }
