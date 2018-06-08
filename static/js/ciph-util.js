@@ -34,8 +34,8 @@ const hash32RegExp = /^[0-9a-f]{32}$/
 const httpCiphLinkRegExp = /#\d-\d-[a-f0-9]{32}-[a-f0-9]{32}-[a-f0-9]{32}/
 
 const linkClickHandlers = {
-    chat: function (ev) { window.ciphBrowser.open(ev.target.href, ev, 'chat') },
-    page: function (ev) { window.ciphBrowser.open(ev.target.href, ev, 'page') },
+    chat: function (ev) { window.ciphBrowser.open(ev.currentTarget.href, ev, 'chat') },
+    page: function (ev) { window.ciphBrowser.open(ev.currentTarget.href, ev, 'page') },
 }
 
 const defaultMimeType = 'application/octet-stream'

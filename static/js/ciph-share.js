@@ -76,7 +76,7 @@ window.CiphShare = class CiphShare {
         let qrcodeOffsetLeft = 0
         // pull base image from video
         if (args.fromVideo) {
-            const video = el('ciph-video')
+            let video = el('ciph-video') || el('ciph-video-0')
             if (video) {
                 // always save video as jpeg
                 saveJpeg = true
