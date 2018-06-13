@@ -34,10 +34,6 @@ window.CiphEnter = class CiphEnter {
         this.active = null
         // ciph browser object
         this.browser = args.browser || window.ciphBrowser
-        // if there is no link then show intro video
-        if (!location.hash && el('ciph-video')) {
-            this.play('freeCredit')
-        }
         // add event listener for link form
         const enterLink = el('enter-link')
         if (enterLink) {
