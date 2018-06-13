@@ -34,6 +34,10 @@ window.CiphEnter = class CiphEnter {
         this.active = null
         // ciph browser object
         this.browser = args.browser || window.ciphBrowser
+        // if there is no link then show intro video
+        if (!location.hash && el('ciph-video')) {
+            this.play('freeCredit', false)
+        }
         // add event listener for link form
         const enterLink = el('enter-link')
         if (enterLink) {
@@ -78,13 +82,14 @@ window.CiphEnter = class CiphEnter {
         this.browser.open(result)
     }
 
-    async play (name) {
+    async play (name, autoplay) {
         if (this.active) {
             await this.active.videoElm.pause()
             await this.active.shaka.unload()
         }
         assert(videos[env][name], `Unknown video name ${name}`)
         this.active = new CiphVideoPlayer({
+            autoplay: autoplay,
             link: videos[env][name],
             resume: false,
         })
