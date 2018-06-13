@@ -32,7 +32,6 @@ const proxyHosts = [
     {
         hosts: [
             'https://proxy-usc-1.ciph.io',
-            'https://proxy-usc-2.ciph.io',
         ],
         region: 'usc',
         time: 0,
