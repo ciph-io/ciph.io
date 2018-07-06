@@ -38,6 +38,10 @@ for (const serverType in serverTypes) {
 }
 // convert secrets to buffers
 for (const server of serverConf) {
+    // skip servers that are not active
+    if (server.action === false) {
+        continue
+    }
     // require valid type
     assert(serverTypes[server.type], 'invalid server type')
     // if server is sharded shard conf must be defined
@@ -233,7 +237,7 @@ module.exports = class ServerService {
     static getServerById (id) {
         // convert id to int from hex
         const intId = parseInt(id, 16)
-        assert(serverConf[intId], 'invalid server id')
+        assert(serverConf[intId], `invalid server id ${id} ${intId}`)
 
         return serverConf[intId]
     }
