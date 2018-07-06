@@ -39,7 +39,7 @@ for (const serverType in serverTypes) {
 // convert secrets to buffers
 for (const server of serverConf) {
     // skip servers that are not active
-    if (server.action === false) {
+    if (server.active === false) {
         continue
     }
     // require valid type
