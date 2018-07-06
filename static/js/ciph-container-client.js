@@ -29,6 +29,29 @@ const proxyHosts = [
         region: 'de',
         time: 0,
     },
+    {
+        hosts: [
+            'https://proxy-usc-1.ciph.io',
+        ],
+        region: 'usc',
+        time: 0,
+    },
+    {
+        hosts: [
+            'https://proxy-use-1.ciph.io',
+            'https://proxy-use-2.ciph.io',
+        ],
+        region: 'use',
+        time: 0,
+    },
+    {
+        hosts: [
+            'https://proxy-usw-1.ciph.io',
+            'https://proxy-usw-2.ciph.io',
+        ],
+        region: 'usw',
+        time: 0,
+    },
 ]
 
 setProxyHost()
@@ -734,6 +757,25 @@ function setProxyHost () {
     // otherwise default to germany
     else {
         proxyRegion = 'de'
+    }
+
+    const start = Date.now()
+
+    let set = false
+
+    for (const proxyHostRegion of proxyHosts) {
+        const newProxyHost = CiphUtil.randomItem(proxyHostRegion.hosts)
+        fetch(`${newProxyHost}${testBlockPath}`, {
+            cache: 'no-store'
+        }).then(res => {
+            proxyHostRegion.time = Date.now() - start
+            if (!dev && !set) {
+                proxyHost = ''
+                proxyRegion = proxyHostRegion.region
+                console.log(`set proxy region: ${proxyRegion}`)
+                set = true
+            }
+        }).catch(console.error)
     }
 }
 
