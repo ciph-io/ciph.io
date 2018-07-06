@@ -21,9 +21,7 @@ let proxyRegion = ''
 const proxyHosts = [
     {
         hosts: [
-            'https://proxy-de-1.ciph.io',
             'https://proxy-de-2.ciph.io',
-            'https://proxy-de-3.ciph.io',
             'https://proxy-de-4.ciph.io',
         ],
         region: 'de',
@@ -31,25 +29,9 @@ const proxyHosts = [
     },
     {
         hosts: [
-            'https://proxy-usc-1.ciph.io',
-        ],
-        region: 'usc',
-        time: 0,
-    },
-    {
-        hosts: [
             'https://proxy-use-1.ciph.io',
-            'https://proxy-use-2.ciph.io',
         ],
         region: 'use',
-        time: 0,
-    },
-    {
-        hosts: [
-            'https://proxy-usw-1.ciph.io',
-            'https://proxy-usw-2.ciph.io',
-        ],
-        region: 'usw',
         time: 0,
     },
 ]
