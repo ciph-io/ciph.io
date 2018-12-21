@@ -72,6 +72,24 @@ window.CiphBrowser = class CiphBrowser {
         this.share.hideQRCode()
         // parse different link formats
         link = this.parseLink(link)
+        // if click is from page then set active user id as referrer
+        if (source === 'page' && this.active) {
+            try {
+                this.partner.setReferrerUserId(this.active.client.meta.userId)
+            }
+            catch (err) {
+                console.error(err)
+            }
+        }
+        // otherwise if referrer id is set in url use it
+        else if (link.params.r) {
+            try {
+                this.partner.setReferrerUserId(link.params.r)
+            }
+            catch (err) {
+                console.error(err)
+            }
+        }
         // if hash changed then add new url history
         if (link.hash !== location.hash) {
             history.pushState({}, '', link.href)            
