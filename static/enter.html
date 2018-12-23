@@ -30,9 +30,7 @@
     <script src="/js/ciph-container-client.js"></script>
     <script src="/js/ciph-enter.js"></script>
     <script src="/js/ciph-page-viewer.js"></script>
-    <script src="/js/ciph-partner.js"></script>
     <script src="/js/ciph-share.js"></script>
-    <script src="/js/ciph-user.js"></script>
     <script src="/js/ciph-video-player.js"></script>
 
 </head>
@@ -108,9 +106,6 @@
         <div id="video-playlist">
             <h1>Tutorials</h1>
             <div class="playlist-item">
-                <img src="/img/ciph-free-credit-play.png" onclick="ciphEnter.play('freeCredit')" />
-            </div>
-            <div class="playlist-item">
                 <img src="/img/ciph-windows-install-play.png" onclick="ciphEnter.play('windowsInstall')" />
             </div>
             <div class="playlist-item">
@@ -125,21 +120,11 @@
             <div class="playlist-item">
                 <img src="/img/ciph-publish-video-play.png" onclick="ciphEnter.play('publishVideo')" />
             </div>
-            <h1>Features</h1>
             <div class="playlist-item">
                 <img src="/img/ciph-privacy-play.png" onclick="ciphEnter.play('privacy')" />
             </div>
             <div class="playlist-item">
                 <img src="/img/ciph-security-play.png" onclick="ciphEnter.play('security')" />
-            </div>
-            <div class="playlist-item">
-                <img src="/img/ciph-premium-play.png" onclick="ciphEnter.play('premium')" />
-            </div>
-            <div class="playlist-item">
-                <img src="/img/ciph-chat-play.png" onclick="ciphEnter.play('chat')" />
-            </div>
-            <div class="playlist-item">
-                <img src="/img/ciph-partner-play.png" onclick="ciphEnter.play('partner')" />
             </div>
             <div class="playlist-item">
                 <img src="/img/ciph-development-play.png" onclick="ciphEnter.play('development')" />
@@ -148,150 +133,7 @@
         </div>
 
         <div id="ciph-page">
-            <div id="register-block">
-                <h1>Register Now For 10GB Free Credit</h1>
-                <h2>No email required!</h2>
-                <p>
-                    <a onclick="ciphUser.renderRegister()" class="pointer">CLICK HERE TO REGISTER NOW</a>
-                    - The registration form will appear in the top left corner.
-                </p>
-                <p>
-                    Registration is instant, free and anonymous. No email required.
-                </p>
-                <p>
-                    *Only one free 10GB credit per unique IP address
-                </p>
-            </div>
-            <h1>Refer a Friend For 10GB Free Credit</h1>
-            <h2>They get an extra 10GB Free Credit too!</h2>
-            <p>
-                Get 10GB Free Credit for every friend who visits Ciph
-                with your custom referral link.
-            </p>
-            <p>
-                Your friend will get an EXTRA 10GB Free Credit for a total
-                of 20GB Free Credit too start.
-            </p>
-            <p>
-                No registration required!
-            </p>
-            <p id="referral-link">
-                You must
-                <a onclick="ciphUser.renderLogin()" class="pointer">Log In</a>
-                or
-                <a onclick="ciphUser.renderRegister()" class="pointer">Register</a>
-                too get your custom referral link.
-            </p>
-            <p>
-                *Only one free 10GB credit per unique IP address
-            </p>
-            <h1>Buy Ciph Credit with Monero</h1>
-            <p>
-                Ciph now supports Monero for buying credit. Ciph charges a fixed price
-                of 0.1XMR/TB (1XMR = 10TB). Using Monero gives you a BIG discount and
-                helps to strengthen the Ciph platform by diversifying our payment
-                processing options.
-            </p>
-            <p id="monero">
-                You must
-                <a onclick="ciphUser.renderLogin()" class="pointer">Log In</a>
-                or
-                <a onclick="ciphUser.renderRegister()" class="pointer">Register</a>
-                too buy credit with monero.
-            </p>
-            <h1>What is Ciph?</h1>
-            <p>
-                Ciph is a premium social video platform that is built
-                on the values of privacy, security and censorship resistance.
-            </p>
-            <p>
-                Ciph respects copyrights and supports content creators with the
-                best partner program in the industry.
-            </p>
-            <p>
-                Ciph protects children with a community ratings system and the
-                most advanced parental controls in the industry.
-            </p>
-            <h2>Premium</h2>
-            <p>
-                Ciph is ad free. Ciph users pay for the data they use but everyone
-                gets 10GB free data per month.
-            </p>
-            <h2>Privacy</h2>
-            <p>
-                Ciph does not log or track any user data other than what is needed
-                to maintain a functioning service.
-            </p>
-            <p>
-                Ciph never records what you watch and only records the amount of
-                data that you use.
-            </p>
-            <p>
-                Ciph will never release any information regarding your account to
-                any third party unless required by court order.
-            </p>
-            <h2>Security</h2>
-            <p>
-                Ciph uses three layers of encryption to protect data as it is
-                stored and transmitted via the Ciph platform.
-            </p>
-            <p>
-                Ciph uses industry standard HTTPS encryption to encrypt
-                communications between your browser and our servers and to encrypt
-                communications between our servers.
-            </p>
-            <p>
-                All data stored and transmitted via Ciph is encrypted using the
-                industry standard AES encryption algorithm.
-            </p>
-            <p>
-                Finally Ciph applies its proprietary One-Time-Pad (OTP) based
-                cryptography system which makes it impossible to determine which
-                files belong to which content.
-            </p>
-            <h2>Censorship Resistance</h2>
-            <p>
-                Ciph makes censorship impossible without a court order.
-            </p>
-            <p>
-                The only way Ciph can censor content is by breaking our own
-                encryption system which would be illegal unless we were
-                required to do so by a court order.
-            </p>
-            <p>
-                Ciph will always comply with lawful orders and assist law
-                enforcement in fighting criminal activity but we will never
-                participate in illegal censorship or surveillance.
-            </p>
-            <h2>Partner Program</h2>
-            <p>
-                Ciph shares 50% of our gross revenue with content creators and
-                promoters.
-            </p>
-            <p>
-                Because Ciph is an ad-free premium video platform our partner
-                program rewards creators who produce quality content that viewers
-                want to pay for.
-            </p>
-            <p>
-                "Demonetization" is not a word in our vocabulary. The only way
-                that content creators will not get paid is if they are engaged
-                in illegal activity and Ciph is legally required to suspend them.
-            </p>
-            <h2>Protecting Children</h2>
-            <p>
-                Ciph does not engage in censorship but we do provide parents
-                with tools to protect their children from harmful content.
-            </p>
-            <p>
-                Ciph's community rating system allows content to be rated by the
-                community and Ciph's parental controls allow parents to restrict
-                what their children can access based on community ratings.
-            </p>
-            <p>
-                Content that does not have a community rating or has a community
-                rating of "Adults Only" is not accessible to children.
-            </p>
+
         </div>
     </div>
 
@@ -306,8 +148,6 @@
     </div>
 
     <script>
-        window.ciphPartner = new CiphPartner()
-        window.ciphUser = new CiphUser()
         window.ciphShare = new CiphShare()
         window.ciphBrowser = new CiphBrowser()
         window.ciphEnter = new CiphEnter()

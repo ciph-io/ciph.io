@@ -13,23 +13,10 @@ const blockRequests = {}
 
 const blockSizes = [ 4*KB, 16*KB, 64*KB, 256*KB, 1*MB, 4*MB, 16*MB ]
 
-const testBlockPath = '/get-proxy/0/5ff536a6d8d90bd3a561cd8440810b90.ciph'
-
-let proxyHost = ''
-let proxyRegion = ''
-
-const proxyHosts = [
-    {
-        hosts: [
-            'https://proxy-de-2.ciph.io',
-            'https://proxy-de-4.ciph.io',
-        ],
-        region: 'de',
-        time: 0,
-    }
+const proxyServers = [
+    ['proxy-de-10', 'proxy-de-12'],
+    ['proxy-de-11', 'proxy-de-13'],
 ]
-
-setProxyHost()
 
 /* exports */
 window.CiphContainerClient = class CiphContainerClient {
@@ -161,10 +148,6 @@ window.CiphContainerClient = class CiphContainerClient {
         }
         else {
             throw new Error('meta blocks not yet supported')
-        }
-        // set active user id for partner credit
-        if (this.meta.userId) {
-            this.partner.setActiveUserId(this.meta.userId)
         }
         // clear head block data when done
         this.headBlock = null
@@ -563,28 +546,11 @@ window.CiphContainerClient = class CiphContainerClient {
      * @returns {Promise<ArrayBuffer>}
      */
     async getSubBlock (blockSize, blockId, retry) {
-        // require user
-        assert(this.user, 'ciph user required')
-        // if user is loading must wait
-        if (this.user.promise) {
-            await this.user.promise
-        }
-        // do not continue if no user credit
-        if (this.user.data.credit <= 0) {
-            throw new Error('no credit')
-        }
-        // get values for authentication
-        const id = this.user.data.token.type === 'anon' ? this.user.data.anonId : this.user.data.userId
-        const expires = this.user.data.token.expires
-        const token = encodeURIComponent(this.user.data.token.value)
+        const prefix = blockId.substr(0,3)
+        const dataDirNum = Math.floor(parseInt(prefix, 16) / 1024)
         // request block
-        const res = await fetch(`${getProxyHost(blockId)}/get-proxy/${blockSize}/${blockId}.ciph`, {
+        const res = await fetch(`${getProxyHost(blockId)}/data/${dataDirNum}/${prefix}/${blockSize}/${blockId}.ciph`, {
             credentials: 'omit',
-            headers: {
-                'Accept': id,
-                'Accept-Language': token,
-                'Content-Language': expires,
-            },
         })
         // return data if success
         if (res.ok) {
@@ -594,10 +560,6 @@ window.CiphContainerClient = class CiphContainerClient {
         else {
             // retry on error
             if (!retry) {
-                // force refresh token if authorization failed
-                if (res.status === 401) {
-                    await this.user.refresh(true)
-                }
                 // retry
                 return this.getSubBlock(blockSize, blockId, true)
             }
@@ -689,69 +651,17 @@ window.CiphContainerClient = class CiphContainerClient {
 /**
  * @function getProxyHost
  *
- * if explicit proxyHost is set return. otherwise if region is set return
- * host from region based on block id
+ * get proxy for serving this block
  *
  * @param {string} blockId
  *
  * @returns {string}
  */
 function getProxyHost (blockId) {
-    if (proxyHost) {
-        return proxyHost
-    }
-    if (proxyRegion) {
-        const proxyRegionHosts = proxyHosts.find(proxyRegionHosts => proxyRegionHosts.region === proxyRegion)
-        if (!proxyRegionHosts) {
-            proxyHost = CiphUtil.randomItem(proxyHosts[0].hosts)
-            return proxyHost
-        }
-        const int = parseInt(blockId.substr(0,4), 16)
-        return proxyRegionHosts.hosts[ int % proxyRegionHosts.hosts.length ]
-    }
-    else {
-        proxyHost = CiphUtil.randomItem(proxyHosts[0].hosts)
-        return proxyHost
-    }
-}
+    const group = parseInt(blockId.substr(0,3), 16) % 2
+    const server = parseInt(blockId.substr(3,3), 16) % 2
 
-/**
- * @function setProxyHost
- *
- * set proxy host, first using default, then setting host based on respose
- * time from tests hosts in each region
- *
- */
-function setProxyHost () {
-    let dev = false
-    // if in dev use dev proxy host
-    if (location.host === 'dev.ciph.io') {
-        proxyHost = 'https://proxy-dev-1.ciph.io'
-        dev = true
-    }
-    // otherwise default to germany
-    else {
-        proxyRegion = 'de'
-    }
-
-    // const start = Date.now()
-
-    // let set = false
-
-    // for (const proxyHostRegion of proxyHosts) {
-    //     const newProxyHost = CiphUtil.randomItem(proxyHostRegion.hosts)
-    //     fetch(`${newProxyHost}${testBlockPath}`, {
-    //         cache: 'no-store'
-    //     }).then(res => {
-    //         proxyHostRegion.time = Date.now() - start
-    //         if (!dev && !set) {
-    //             proxyHost = ''
-    //             proxyRegion = proxyHostRegion.region
-    //             console.log(`set proxy region: ${proxyRegion}`)
-    //             set = true
-    //         }
-    //     }).catch(console.error)
-    // }
+    return `https://${proxyServers[group][server]}.ciph.io`
 }
 
 })();
